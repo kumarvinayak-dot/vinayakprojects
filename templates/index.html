@@ -1,0 +1,2110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Build Verification (NAS) and Environment Validation (HOST IP) Automation Tool— ASCF/CRM/AMSS/UXF/OMNI/DEX</title>
+    <style>
+      :root {
+        --crm-navy: #0f172a;
+        --crm-slate: #1e3a5f;
+        --crm-blue: #1d4ed8;
+        --crm-sky: #0ea5e9;
+        --crm-teal: #0d9488;
+        --crm-card: #ffffff;
+        --crm-muted: #64748b;
+        --crm-border: #cbd5e1;
+        --crm-soft: #f1f5f9;
+        --crm-accent-bg: linear-gradient(135deg, #eff6ff 0%, #ecfeff 50%, #f0fdfa 100%);
+       
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(165deg, #0f172a 0%, #1e3a5f 38%, #e2e8f0 38%, #f8fafc 100%);
+        color: var(--crm-navy);
+      }
+      .container { max-width: 920px; margin: 0 auto; padding: 20px 16px 40px; }
+      .crm-hero {
+        background: linear-gradient(120deg, #0f172a 0%, #1e3a5f 45%, #0369a1 100%);
+        color: #fff;
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+      }
+      .crm-hero h1 { margin: 0 0 6px 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+      .crm-hero p { margin: 0; font-size: 0.9rem; opacity: 0.92; line-height: 1.45; }
+      .crm-hero-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .card {
+        background: var(--crm-card);
+        border: 1px solid var(--crm-border);
+        border-radius: 14px;
+        padding: 18px 18px 20px;
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      }
+      .card-main { border-top: 4px solid var(--crm-blue); }
+      form { margin: 0; }
+      .crm-panel {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: var(--crm-soft);
+        border: 1px solid #e2e8f0;
+      }
+      .crm-panel:first-of-type { margin-top: 0; }
+      .crm-panel--accent {
+        background: var(--crm-accent-bg);
+        border-color: #bfdbfe;
+      }
+      .crm-panel h3 {
+        margin: 0 0 10px 0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--crm-slate);
+      }
+      label.section-label {
+        display: block;
+        margin-top: 14px;
+        margin-bottom: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--crm-navy);
+      }
+      label.section-label:first-child { margin-top: 0; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      input[type=text], input[type=number] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--crm-border);
+        border-radius: 10px;
+        outline: none;
+        background: #fff;
+        font-size: 0.95rem;
+      }
+      input[type=text]:focus, input[type=number]:focus {
+        border-color: var(--crm-blue);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+      }
+      input[type=radio], input[type=checkbox] { accent-color: var(--crm-blue); }
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--crm-border);
+        border-radius: 10px;
+        background: #fff;
+        outline: none;
+        font-size: 0.95rem;
+      }
+      select:focus { border-color: var(--crm-blue); box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15); }
+      .options { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 10px 14px; margin-top: 8px; }
+      .mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 640px) { .mode-grid { grid-template-columns: 1fr; } }
+      .mode-tile {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .mode-tile:has(input:checked) {
+        border-color: var(--crm-blue);
+        box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.2);
+        background: #eff6ff;
+      }
+      .mode-tile span.desc { display: block; font-size: 0.75rem; color: var(--crm-muted); font-weight: 500; margin-top: 4px; line-height: 1.35; }
+      .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+      button[type=submit] {
+        padding: 12px 22px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        background: linear-gradient(90deg, var(--crm-sky) 0%, var(--crm-blue) 100%);
+        color: #fff;
+        border: 0;
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(29, 78, 216, 0.28);
+        transition: transform 0.05s ease, filter 0.15s ease;
+      }
+      button[type=submit]:hover { filter: brightness(1.03); }
+      button[type=submit]:active { transform: translateY(1px); }
+      .btn-secondary {
+        padding: 8px 14px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .btn-secondary:hover { background: rgba(255,255,255,0.22); }
+      .reports { margin-top: 8px; }
+      .flash { padding: 10px 12px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 10px; margin: 12px 0; border-left: 5px solid #ef4444; }
+      ul { padding-left: 18px; margin: 8px 0 0 0; }
+      a { color: var(--crm-blue); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      h3 { color: var(--crm-slate); margin: 0 0 8px 0; font-size: 1.05rem; }
+      .hint { color: var(--crm-muted); font-size: 12px; line-height: 1.45; }
+      .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#e0e7ff; color:#3730a3; font-size:12px; font-weight:700; }
+      .footer-link { display:inline-block; background:#fff; border:1px solid var(--crm-border); border-radius:12px; padding:10px 16px; box-shadow: 0 2px 10px rgba(15,23,42,0.05); }
+      .crm-path-helper {
+        margin-top: 12px;
+        padding: 14px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%);
+        border: 1px solid #7dd3fc;
+        border-radius: 12px;
+      }
+      .crm-path-helper h4 { margin: 0 0 6px 0; font-size: 15px; color: #0369a1; }
+      .crm-path-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border: 1px solid var(--crm-border); border-radius: 8px; overflow: hidden; margin-top: 10px; }
+      .crm-path-table th { text-align: left; padding: 8px 10px; background: #e0f2fe; color: #0c4a6e; border-bottom: 1px solid var(--crm-border); }
+      .crm-path-table td { padding: 8px 10px; border-bottom: 1px solid #e0f2fe; vertical-align: top; word-break: break-all; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+      .crm-path-table td:first-child { font-family: system-ui, sans-serif; color: #334155; max-width: 220px; }
+      .crm-path-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+      .crm-base-paths-toolbar { margin: 10px 0 6px 0; }
+      .crm-base-paths-scroll.minimized { max-height: 140px; overflow: auto; border: 1px solid var(--crm-border); border-radius: 8px; background: #fff; }
+      .uxf-omni-paths-scroll-full { width: 100%; overflow-x: auto; }
+      .uxf-omni-paths-scroll-full.minimized { max-height: 140px; overflow: auto; border: 1px solid var(--crm-border); border-radius: 8px; background: #fff; }
+      .btn-tiny { padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 0; cursor: pointer; color: #fff; }
+      .btn-tiny.browse { background: #0284c7; }
+      a.btn-tiny.browse, a.btn-tiny.browse:visited { color: #fff; text-decoration: none; display: inline-block; line-height: 1.3; }
+      a.btn-tiny.browse:hover { filter: brightness(1.05); }
+      .config-filter-box {
+        margin: 12px 0;
+        padding: 12px 14px;
+        background: #fff;
+        border: 1px solid #bae6fd;
+        border-radius: 10px;
+      }
+      @media (max-width: 720px) { .row { grid-template-columns: 1fr; } .options { grid-template-columns: 1fr; } }
+      .path-field-wrap { position: relative; }
+      .path-history-dropdown {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 4px);
+        z-index: 40;
+        background: #fff;
+        border: 1px solid var(--crm-border);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+        max-height: 220px;
+        overflow: auto;
+      }
+      .path-field-wrap.path-history-hover .path-history-dropdown.has-items,
+      .path-field-wrap.path-history-focus .path-history-dropdown.has-items {
+        display: block;
+      }
+      .path-history-dropdown .path-history-head {
+        padding: 7px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--crm-muted);
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        background: #f8fafc;
+      }
+      .path-history-dropdown button.path-history-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 9px 10px;
+        border: 0;
+        border-bottom: 1px solid #f1f5f9;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.8rem;
+        word-break: break-all;
+        font-family: ui-monospace, Consolas, monospace;
+        color: var(--crm-navy);
+      }
+      .path-history-dropdown button.path-history-item:last-child { border-bottom: 0; }
+      .path-history-dropdown button.path-history-item:hover,
+      .path-history-dropdown button.path-history-item:focus {
+        background: #eff6ff;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="crm-hero">
+        <h1>Build Verification (NAS) and Environment Validation (HOST IP) Automation Tool— ASCF/CRM/AMSS/UXF/OMNI/DEX</h1>
+        <p>Select one application, compare old vs new build paths and Validate in the Env. Single URL: <code>/crm</code>. Built-in server.</p>
+        <div class="crm-hero-actions">
+          <button type="button" id="stop-btn" class="btn-secondary">Stop and refresh</button>
+        </div>
+      </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!--
+      UI trimmed for CRM-focused workflow. Backend still supports naming/FOSS/jar_name/copy-build —
+      re-add controls here and wire names to match web_app / builtin_server if needed.
+    -->
+    <div class="card card-main">
+      <form method="post" action="{{ url_for('run_compare') }}">
+
+      <div id="home-mode-toggles" style="margin-bottom:14px;">
+        <div style="margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="build_compare_toggle" /> Build Comparison
+          </label>
+          <p class="hint" style="margin:4px 0 0 0;">Enter old vs new build paths, select one application, configure comparison options, and run.</p>
+        </div>
+        <div style="margin-bottom:0;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="env_path_toggle" /> Environment Validation
+          </label>
+          <p class="hint" style="margin:4px 0 0 0;">Open remote SSH panel to search JAR manifest <code>Implementation-Version</code> on a deployment server. You can use this while a build comparison runs in another tab.</p>
+        </div>
+      </div>
+
+      <div id="build-compare-panel" style="display:none;">
+
+      <div class="crm-panel">
+      <div id="nas-build-paths-section">
+        <h3>Build paths</h3>
+        <div class="row">
+          <div class="path-field-wrap" id="wrap-folder1">
+            <label>Old build</label>
+            <input type="text" name="folder1_path" value="{{ default_folder1 }}" placeholder="UNC or local path — previous / baseline build" autocomplete="off" />
+            <div class="path-history-dropdown" id="dropdown-folder1" aria-label="Recent old build paths"></div>
+          </div>
+          <div class="path-field-wrap" id="wrap-folder2">
+            <label>New build</label>
+            <input type="text" name="folder2_path" value="{{ default_folder2 }}" placeholder="UNC or local path — current build" autocomplete="off" />
+            <div class="path-history-dropdown" id="dropdown-folder2" aria-label="Recent new build paths"></div>
+          </div>
+        </div>
+      </div>
+
+        <div class="crm-path-helper" id="crm-only-panel">
+          <h4>CRM &amp; AMSS version base paths</h4>
+          <p class="hint" style="margin:0 0 10px 0;">Load one list at a time (full-width table). CRM paths from server config. AMSS: <code>\\raaisilon\cmprod\pbg\cmbuild\AMSS</code>. <strong>Open in Explorer</strong> on <strong>localhost</strong>; remotely, path is copied.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+            <button type="button" id="btn-crm-base-paths" class="btn-secondary" style="background:#0369a1;border-color:#0369a1;">Load CRM base paths</button>
+            <button type="button" id="btn-amss-base-paths" class="btn-secondary" style="background:#0d9488;border-color:#0d9488;">Load AMSS base paths</button>
+          </div>
+          <p id="crm-amss-paths-view-title" style="display:none;margin:0 0 8px 0;font-size:14px;font-weight:700;color:#334155;"></p>
+          <p id="crm-base-paths-status" class="hint" style="margin:0 0 6px 0;display:none;"></p>
+          <div id="crm-base-paths-wrap" style="display:none;width:100%;margin-bottom:12px;">
+            <div id="crm-base-paths-toolbar" class="crm-base-paths-toolbar" style="display:none;">
+              <button type="button" id="btn-crm-toggle-expand" class="btn-tiny" style="background:#64748b;">Minimize table</button>
+            </div>
+            <div id="crm-base-paths-scroll" class="crm-base-paths-scroll uxf-omni-paths-scroll-full">
+              <table class="crm-path-table" id="crm-base-paths-table">
+                <thead>
+                  <tr>
+                    <th>CRM version</th>
+                    <th>Base path</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="crm-base-paths-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <p id="amss-base-paths-status" class="hint" style="margin:0 0 6px 0;display:none;"></p>
+          <div id="amss-base-paths-wrap" style="display:none;width:100%;margin-bottom:12px;">
+            <div id="amss-base-paths-toolbar" class="crm-base-paths-toolbar" style="display:none;">
+              <button type="button" id="btn-amss-toggle-expand" class="btn-tiny" style="background:#64748b;">Minimize table</button>
+            </div>
+            <div id="amss-base-paths-scroll" class="uxf-omni-paths-scroll-full">
+              <table class="crm-path-table" id="amss-base-paths-table">
+                <thead>
+                  <tr>
+                    <th>AMSS version</th>
+                    <th>Base path</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="amss-base-paths-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="crm-path-helper" id="ascf-only-panel-paths" style="display:none;background:linear-gradient(135deg,#faf5ff 0%,#f5f3ff 100%);border-color:#d8b4fe;">
+          <h4 style="color:#6b21a8;">ASCF version base paths</h4>
+          <p class="hint" style="margin:0 0 10px 0;">Load known ASCF build roots. <strong>Open in Explorer</strong> works on <strong>localhost</strong>; remotely, the path is copied.</p>
+          <button type="button" id="btn-ascf-base-paths" class="btn-secondary" style="background:#7c3aed;border-color:#7c3aed;">Load ASCF base paths</button>
+          <p id="ascf-base-paths-status" class="hint" style="margin:8px 0 0 0;display:none;"></p>
+          <div id="ascf-base-paths-wrap" style="display:none;">
+            <div id="ascf-base-paths-toolbar" class="crm-base-paths-toolbar" style="display:none;">
+              <button type="button" id="btn-ascf-toggle-expand" class="btn-tiny" style="background:#64748b;">Expand table</button>
+            </div>
+            <div id="ascf-base-paths-scroll" class="crm-base-paths-scroll">
+              <table class="crm-path-table" id="ascf-base-paths-table">
+                <thead>
+                  <tr>
+                    <th>ASCF version</th>
+                    <th>Base path</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ascf-base-paths-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="crm-path-helper" id="uxf-only-panel-paths" style="display:none;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);border-color:#86efac;">
+          <h4 style="color:#166534;">UXF &amp; OMNI version base paths</h4>
+          <p class="hint" style="margin:0 0 10px 0;">Load one list at a time (full-width table). UXF: <code>\\raaisilon\cmprod\pbg\cmbuild\LS</code> or <code>\\raaisilon\cmprod_dev\pbg\cmdev\LS</code>. OMNI: <code>\\raaisilon\cmprod\pbg\cmbuild\CM_REP</code> (e.g. 9.3.1 → <code>v931</code>) or <code>\\raaisilon\cmprod_dev\pbg\cmdev\CM_REP</code>.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+            <button type="button" id="btn-uxf-base-paths" class="btn-secondary" style="background:#059669;border-color:#059669;">Load UXF base paths</button>
+            <button type="button" id="btn-omni-base-paths" class="btn-secondary" style="background:#2563eb;border-color:#2563eb;">Load OMNI base paths</button>
+          </div>
+          <p id="uxf-omni-paths-view-title" style="display:none;margin:0 0 8px 0;font-size:14px;font-weight:700;color:#334155;"></p>
+          <p id="uxf-base-paths-status" class="hint" style="margin:0 0 6px 0;display:none;"></p>
+          <div id="uxf-base-paths-wrap" style="display:none;width:100%;margin-bottom:12px;">
+            <div id="uxf-base-paths-toolbar" class="crm-base-paths-toolbar" style="display:none;">
+              <button type="button" id="btn-uxf-toggle-expand" class="btn-tiny" style="background:#64748b;">Minimize table</button>
+            </div>
+            <div id="uxf-base-paths-scroll" class="uxf-omni-paths-scroll-full">
+              <table class="crm-path-table" id="uxf-base-paths-table">
+                <thead>
+                  <tr>
+                    <th>UXF version</th>
+                    <th>Environment</th>
+                    <th>Base path</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="uxf-base-paths-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <p id="omni-base-paths-status" class="hint" style="margin:0 0 6px 0;display:none;"></p>
+          <div id="omni-base-paths-wrap" style="display:none;width:100%;margin-bottom:12px;">
+            <div id="omni-base-paths-toolbar" class="crm-base-paths-toolbar" style="display:none;">
+              <button type="button" id="btn-omni-toggle-expand" class="btn-tiny" style="background:#64748b;">Minimize table</button>
+            </div>
+            <div id="omni-base-paths-scroll" class="uxf-omni-paths-scroll-full">
+              <table class="crm-path-table" id="omni-base-paths-table">
+                <thead>
+                  <tr>
+                    <th>OMNI version</th>
+                    <th>Environment</th>
+                    <th>Base path</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="omni-base-paths-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <p class="hint" style="margin:0;"><strong>Open in Explorer</strong> on <strong>localhost</strong>; remotely, path is copied.</p>
+        </div>
+      </div>
+
+      <div class="crm-panel">
+        <h3>Application &amp; mode</h3>
+        <label class="section-label">Application (select one)</label>
+        <div class="options" id="app-select-options">
+          <label><input type="checkbox" name="app_ascf" id="app_ascf" /> ASCF</label>
+          <label><input type="checkbox" name="app_crm" id="app_crm" /> CRM/AMSS</label>
+          <label><input type="checkbox" name="app_uxf" id="app_uxf" /> UXF/OMNI</label>
+          <label><input type="checkbox" name="app_dex" id="app_dex" /> DEX</label>
+          <label><input type="checkbox" name="app_wef" id="app_wef" /> WEF</label>
+        </div>
+        <p class="hint" style="margin:8px 0 0 0;">ASCF, CRM/AMSS, UXF/OMNI, DEX, and WEF use different comparison engines — select exactly one.</p>
+      </div>
+
+      <div class="crm-panel" id="ascf-only-panel" style="display:none;">
+        <h3>ASCF comparison mode</h3>
+        <div class="options">
+          <label><input type="radio" name="mode" value="full" checked class="ascf-mode-input" /> Full content comparison</label>
+          <label><input type="radio" name="mode" value="naming" class="ascf-mode-input" /> Naming convention comparison</label>
+          <label><input type="radio" name="mode" value="archives" class="ascf-mode-input" /> Archives (.ear/.war/.zip/.rpm/.jar) contents</label>
+          <label><input type="radio" name="mode" value="foss" class="ascf-mode-input" /> FOSS/Foundation (JAR Implementation-Version)</label>
+        </div>
+        <p class="hint" style="margin:8px 0 0 0;">Select <strong>one</strong> ASCF comparison mode only (mutually exclusive).</p>
+        <div class="row" style="margin-top:12px;">
+          <div>
+            <label>Jar name (FOSS/Foundation mode)</label>
+            <input type="text" name="jar_name" class="ascf-mode-input" placeholder="e.g., some-lib.jar or partial name" />
+          </div>
+          <div>
+            <label>Foundation product</label>
+            <select id="foss-product" name="foss_product" class="ascf-mode-input">
+              <option value="">Select Foundation Product</option>
+              <option value="AmdocsCore.jar">Amdocs Core</option>
+              <option value="AmdocsProcMgrLiteClient.jar">Amdocs Process Manager</option>
+              <option value="AmdocsSecurityManager.jar">Amdocs Security Manager</option>
+              <option value="acfglib.jar">Amdocs System Configuration</option>
+              <option value="obfuscation-utility.jar">obfuscation-utility</option>
+            </select>
+          </div>
+          <div>
+            <label>Foss product</label>
+            <select id="foss-lib" name="foss_lib" class="ascf-mode-input">
+              <option value="">Select Foss Product</option>
+              <option value="commons-fileupload.jar">commons-fileupload</option>
+              <option value="commons-io.jar">commons-io</option>
+              <option value="commons-logging.jar">commons-logging</option>
+              <option value="esapi.jar">esapi</option>
+              <option value="jxbrowser.jar">jxbrowser</option>
+              <option value="jxbrowser-swing.jar">jxbrowser-swing</option>
+              <option value="jxbrowser-win.jar">jxbrowser-win</option>
+              <option value="log4j-1.2-api.jar">log4j-1.2-api</option>
+              <option value="log4j-api.jar">log4j-api</option>
+              <option value="log4j-core.jar">log4j-core</option>
+              <option value="slf4j-api.jar">slf4j-api</option>
+              <option value="slf4j-nop.jar">slf4j-nop</option>
+            </select>
+          </div>
+        </div>
+        <label class="section-label" style="margin-top:14px;">Retry settings</label>
+        <div class="options">
+          <label>Max retries <input type="number" name="max_retries" value="3" min="0" step="1" class="ascf-mode-input" /></label>
+          <label>Retry delay (s) <input type="number" name="retry_delay" value="1.0" min="0" step="0.1" class="ascf-mode-input" /></label>
+        </div>
+      </div>
+
+      <div class="crm-panel crm-panel--accent" id="ascf-only-panel-options" style="display:none;">
+        <h3>ASCF full — optional report options</h3>
+        <p class="hint" style="margin:0 0 12px 0;">Shown when <strong>Full content comparison</strong> is selected.</p>
+        <label>JAR names for class diff (comma-separated)</label>
+        <input type="text" name="ascf_class_diff_jar" class="ascf-mode-input" placeholder="e.g. AmdocsCore.jar, lightsaber.jar — .class / CFR Java diffs" />
+        <div class="config-filter-box">
+          <label style="display:block;margin-bottom:6px;font-weight:600;">File patterns for text / config diffs in HTML (comma-separated — section shown only when filled)</label>
+          <input type="text" name="ascf_config_files_filter" class="ascf-mode-input" placeholder="e.g. app.json, *.yml, web.xml" />
+          <p class="hint" style="margin:8px 0 0 0;">Leave empty to hide the <strong>Text and config files changed</strong> block unless default rules apply.</p>
+        </div>
+        <label style="margin-top:12px;display:block;">JAR names for manifest diff (comma-separated)</label>
+        <input type="text" name="ascf_manifest_diff_jar" class="ascf-mode-input" placeholder="e.g. scala*.jar, commons-lang3*.jar — MANIFEST Implementation-Version" />
+        <label style="margin-top:14px;display:block;font-weight:600;">Explicit file sizes to compare (comma-separated)</label>
+        <input type="text" name="ascf_explicit_size_paths" class="ascf-mode-input" placeholder="e.g. AmdocsUIF.ear, *.war — old vs new sizes in report" />
+      </div>
+
+      <div class="crm-panel" id="crm-only-panel-mode">
+        <h3>CRM/AMSS comparison mode</h3>
+        <input type="hidden" name="mode" value="full" id="crm-mode-hidden" class="crm-mode-input" />
+        <p class="hint" style="margin:8px 0 0 0;">Comparison mode: <strong>Full content</strong> for CRM and AMSS builds (SDK / tree diff).</p>
+        <div class="options" style="margin-top:12px;">
+          <label><input type="checkbox" name="fast_crm_full" value="1" checked class="crm-mode-input" /> Fast CRM/AMSS full compare (skip deep archive hashing)</label>
+        </div>
+        <div class="options" style="margin-top:12px;">
+          <input type="hidden" name="compare_clfy_agent_zip" value="0" class="crm-mode-input" />
+          <label><input type="checkbox" name="compare_clfy_agent_zip" value="1" class="crm-mode-input" /> Compare ClfyAgent .zip/.ear in SDK (fast size-only nested JAR/WAR/EAR)</label>
+        </div>
+        <p class="hint" style="margin:10px 0 0 0;line-height:1.55;">
+          <strong>ClfyAgent only:</strong> enable <em>Compare ClfyAgent</em> and disable <em>Fast CRM/AMSS full compare</em>.
+          <strong>Fast CRM only:</strong> enable <em>Fast CRM/AMSS full compare</em> and disable <em>Compare ClfyAgent</em>.
+          Enable both for full fast tree compare plus ClfyAgent nested archive sizes.
+        </p>
+      </div>
+
+      <div class="crm-panel" id="uxf-only-panel" style="display:none;">
+        <h3>UXF/OMNI comparison</h3>
+        <p class="hint" style="margin:0;">Full folder comparison for UXF and OMNI builds (same path fields as above).</p>
+      </div>
+
+      <div class="crm-panel" id="dex-only-panel" style="display:none;">
+        <h3>DEX — Nexus artifacts</h3>
+        <p class="hint" style="margin:0 0 12px 0;">Enter versions for one or both products. <strong>Run comparison</strong> downloads from <code>illin3273</code>, compares artifacts, and shows an HTML report.</p>
+        <p class="hint" style="margin:0 0 8px 0;font-weight:700;">digital-playbook</p>
+        <div class="row">
+          <div>
+            <label>Previous Nexus version (digital-playbook)</label>
+            <input type="text" name="dex_nexus_previous_version" id="dex_nexus_previous_version" class="dex-field" placeholder="e.g. 10.24.1.47" />
+          </div>
+          <div>
+            <label>Latest Nexus version (digital-playbook)</label>
+            <input type="text" name="dex_nexus_latest_version" id="dex_nexus_latest_version" class="dex-field" placeholder="e.g. 10.24.1.50" />
+          </div>
+        </div>
+        <p class="hint" style="margin:16px 0 8px 0;font-weight:700;">digital-webapp-ces</p>
+        <div class="row">
+          <div>
+            <label>Previous Nexus version (digital-webapp-ces)</label>
+            <input type="text" name="dex_webapp_ces_previous_version" id="dex_webapp_ces_previous_version" class="dex-field" placeholder="e.g. 10.24.1.47" />
+          </div>
+          <div>
+            <label>Latest Nexus version (digital-webapp-ces)</label>
+            <input type="text" name="dex_webapp_ces_latest_version" id="dex_webapp_ces_latest_version" class="dex-field" placeholder="e.g. 10.24.1.50" />
+          </div>
+        </div>
+        <div id="dex-nexus-url-preview" class="config-filter-box" style="margin-top:12px;display:none;">
+          <div style="font-weight:700;margin-bottom:8px;">Nexus download URLs</div>
+          <div id="dex-nexus-preview-playbook"></div>
+          <div id="dex-nexus-preview-webapp" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <div class="crm-panel" id="wef-only-panel" style="display:none;">
+        <h3>WEF — remote Unix comparison</h3>
+        <p class="hint" style="margin:0 0 12px 0;">Connect over SSH, compare old and new build paths on the Unix host, and open an HTML report.</p>
+        <div class="row">
+          <div>
+            <label>SSH host</label>
+            <input type="text" name="wef_ssh_host" id="wef_ssh_host" class="wef-field" placeholder="hostname or IP" />
+          </div>
+          <div>
+            <label>SSH port</label>
+            <input type="text" name="wef_ssh_port" id="wef_ssh_port" class="wef-field" value="22" placeholder="22" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>SSH username</label>
+            <input type="text" name="wef_ssh_username" id="wef_ssh_username" class="wef-field" placeholder="Unix user" autocomplete="username" />
+          </div>
+          <div>
+            <label>SSH password</label>
+            <input type="password" name="wef_ssh_password" id="wef_ssh_password" class="wef-field" placeholder="password" autocomplete="current-password" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Old build path (on Unix)</label>
+            <input type="text" name="wef_old_path" id="wef_old_path" class="wef-field" placeholder="/path/to/old/build" />
+          </div>
+          <div>
+            <label>New build path (on Unix)</label>
+            <input type="text" name="wef_new_path" id="wef_new_path" class="wef-field" placeholder="/path/to/new/build" />
+          </div>
+        </div>
+        <p class="hint" style="margin:8px 0 0 0;">NAS Old/New build fields are not used for WEF.</p>
+      </div>
+
+      <div class="crm-panel crm-panel--accent" id="crm-only-panel-options">
+        <h3>CRM/AMSS full — optional report options</h3>
+        <label>JAR names for class diff (comma-separated)</label>
+        <input type="text" name="crm_class_diff_jar" class="crm-mode-input" placeholder="e.g. ClfyBillingManager.jar, ClfyCore.jar — .class / CFR Java diffs" />
+        <div class="config-filter-box">
+          <label style="display:block;margin-bottom:6px;font-weight:600;">File patterns for text / config diffs in HTML (comma-separated — section shown only when filled)</label>
+          <input type="text" name="crm_config_files_filter" class="crm-mode-input" placeholder="e.g. app.json, *.yml, web.xml — non-.jar/.war files across the two builds" />
+          <p class="hint" style="margin:8px 0 0 0;">Leave empty to hide the <strong>Text and config files changed</strong> block. When you enter patterns, the HTML report lists changed paths matching those names or globs (including inside archives; not <code>.class</code> or archive leaf files). Substring or <code>*</code> / <code>?</code> glob.</p>
+        </div>
+        <label style="margin-top:12px;display:block;">JAR names for manifest diff (comma-separated)</label>
+        <input type="text" name="crm_manifest_diff_jar" class="crm-mode-input" placeholder="e.g. scala*.jar, commons-lang3*.jar — MANIFEST Implementation-Version" />
+        <label style="margin-top:14px;display:block;font-weight:600;">Explicit file sizes to compare (comma-separated)</label>
+        <input type="text" name="crm_explicit_size_paths" class="crm-mode-input" placeholder="e.g. ClfyAgent.ear, AmdocsCRM.ear, *.war — old vs new sizes in report" />
+      </div>
+
+        <div class="actions">
+          <button type="submit">Run comparison</button>
+        </div>
+      </div>
+      </form>
+
+      <div class="crm-panel" id="environment-path-panel" style="display:none;background:#fff;border:1px solid #cbd5e1;margin-top:12px;">
+        <h3>Remote environment (SSH)</h3>
+        <p class="hint" style="margin:0 0 10px 0;">Connect via SSH, search the remote deployment tree for JAR name(s), and read <code>Implementation-Version</code> from each match (same as <code>find_jar_version.sh</code>). Comma-separated names or wildcards (e.g. <code>AmdocsSecurityManager.jar</code>).</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:10px;">
+          <div>
+            <label>Host / IP</label>
+            <input type="text" id="env_ssh_host" placeholder="10.x.x.x" />
+          </div>
+          <div>
+            <label>Username</label>
+            <input type="text" id="env_ssh_username" placeholder="SSH user" />
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="password" id="env_ssh_password" placeholder="SSH password" autocomplete="off" />
+          </div>
+          <div>
+            <label>Port</label>
+            <input type="number" id="env_ssh_port" value="22" min="1" max="65535" />
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Remote environment path</label>
+          <input type="text" id="env_ssh_remote_path" placeholder="/opt/app/deploy or server deployment root" />
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>JAR name(s) to search</label>
+          <input type="text" id="env_ssh_jar_names" placeholder="e.g. AmdocsSecurityManager.jar or scala*.jar, commons-io.jar" />
+          <p class="hint" style="margin:4px 0 0 0;">Lists every matching JAR under the remote path with manifest <code>Implementation-Version</code>.</p>
+        </div>
+        <div>
+          <button type="button" id="btn-validate-env-jars" class="btn-secondary" style="background:#7c3aed;border-color:#7c3aed;">Search environment &amp; validate JAR manifest</button>
+        </div>
+        <p id="env-jars-status" class="hint" style="margin:8px 0 0 0;display:none;"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="reports">
+        <h3>Recent reports <span class="pill">Latest 30</span></h3>
+        <p class="hint" style="margin:6px 0 10px 0;">Newest first by save time.</p>
+      {% if recent_reports %}
+        <ul>
+          {% for item in recent_reports %}
+          <li><a href="{{ url_for('view_report', filename=item.open_name) }}{% if item.open_name.startswith('crm_full_comparison_') and item.open_name.endswith('.html') %}#class-level-details{% endif %}" target="_blank" rel="noopener noreferrer">{{ item.open_name }}</a> <small class="hint"> — {{ item.mtime }}</small></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No reports yet.</p>
+      {% endif %}
+      </div>
+    </div>
+
+    <script>{{ crm_security_bootstrap_js|safe }}</script>
+    <script>
+      (function () {
+        var f1 = document.querySelector('input[name="folder1_path"]');
+        var f2 = document.querySelector('input[name="folder2_path"]');
+        if (!f1 || !f2) return;
+        var k1 = 'pc_last_folder1_path';
+        var k2 = 'pc_last_folder2_path';
+        var HIST1 = 'pc_build_path_history_old';
+        var HIST2 = 'pc_build_path_history_new';
+        var MAX_HIST = 5;
+        var wrap1 = document.getElementById('wrap-folder1');
+        var wrap2 = document.getElementById('wrap-folder2');
+        var dd1 = document.getElementById('dropdown-folder1');
+        var dd2 = document.getElementById('dropdown-folder2');
+
+        function readHist(key) {
+          try {
+            var raw = localStorage.getItem(key);
+            if (!raw) return [];
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr)
+              ? arr.filter(function (x) {
+                  return typeof x === 'string' && x.trim();
+                })
+              : [];
+          } catch (e) {
+            return [];
+          }
+        }
+        function writeHist(key, arr) {
+          try {
+            localStorage.setItem(key, JSON.stringify(arr.slice(0, MAX_HIST)));
+          } catch (e) {}
+        }
+        function pushHist(key, path) {
+          path = (path || '').trim();
+          if (!path) return;
+          var arr = readHist(key);
+          arr = arr.filter(function (x) {
+            return x !== path;
+          });
+          arr.unshift(path);
+          writeHist(key, arr);
+        }
+        function migrateLegacyIntoHist() {
+          try {
+            if (readHist(HIST1).length === 0) {
+              var leg = localStorage.getItem(k1);
+              if (leg && leg.trim()) pushHist(HIST1, leg);
+            }
+            if (readHist(HIST2).length === 0) {
+              var leg2 = localStorage.getItem(k2);
+              if (leg2 && leg2.trim()) pushHist(HIST2, leg2);
+            }
+          } catch (e) {}
+        }
+
+        migrateLegacyIntoHist();
+
+        try {
+          var s1 = localStorage.getItem(k1);
+          var s2 = localStorage.getItem(k2);
+          var h1 = readHist(HIST1);
+          var h2 = readHist(HIST2);
+          if (!f1.value) {
+            if (h1.length) f1.value = h1[0];
+            else if (s1) f1.value = s1;
+          }
+          if (!f2.value) {
+            if (h2.length) f2.value = h2[0];
+            else if (s2) f2.value = s2;
+          }
+        } catch (e) {}
+
+        function persist() {
+          try {
+            localStorage.setItem(k1, f1.value || '');
+            localStorage.setItem(k2, f2.value || '');
+          } catch (e) {}
+        }
+
+        function fillDropdown(dropdown, paths, label, input) {
+          if (!dropdown) return;
+          dropdown.innerHTML = '';
+          dropdown.classList.toggle('has-items', paths.length > 0);
+          if (!paths.length) return;
+          var head = document.createElement('div');
+          head.className = 'path-history-head';
+          head.textContent = label;
+          dropdown.appendChild(head);
+          paths.forEach(function (p) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'path-history-item';
+            btn.textContent = p;
+            btn.title = p;
+            btn.addEventListener('mousedown', function (ev) {
+              ev.preventDefault();
+            });
+            btn.addEventListener('click', function () {
+              input.value = p;
+              persist();
+              var wrap = input.closest('.path-field-wrap');
+              if (wrap) {
+                wrap.classList.remove('path-history-hover');
+                wrap.classList.remove('path-history-focus');
+              }
+              refreshHistDropdowns();
+              input.focus();
+            });
+            dropdown.appendChild(btn);
+          });
+        }
+
+        function refreshHistDropdowns() {
+          fillDropdown(dd1, readHist(HIST1), 'Last ' + MAX_HIST + ' — old build', f1);
+          fillDropdown(dd2, readHist(HIST2), 'Last ' + MAX_HIST + ' — new build', f2);
+        }
+
+        refreshHistDropdowns();
+
+        function bindHoverWrap(wrap) {
+          if (!wrap) return;
+          var hideT = null;
+          wrap.addEventListener('mouseenter', function () {
+            if (hideT) clearTimeout(hideT);
+            wrap.classList.add('path-history-hover');
+          });
+          wrap.addEventListener('mouseleave', function () {
+            hideT = setTimeout(function () {
+              wrap.classList.remove('path-history-hover');
+            }, 220);
+          });
+        }
+        bindHoverWrap(wrap1);
+        bindHoverWrap(wrap2);
+
+        function bindFocusHistWrap(wrap, input) {
+          if (!wrap || !input) return;
+          input.addEventListener('focus', function () {
+            wrap.classList.add('path-history-focus');
+          });
+          input.addEventListener('blur', function () {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () {
+                if (!wrap.contains(document.activeElement)) {
+                  wrap.classList.remove('path-history-focus');
+                }
+              });
+            });
+          });
+        }
+        bindFocusHistWrap(wrap1, f1);
+        bindFocusHistWrap(wrap2, f2);
+
+        f1.addEventListener('input', persist);
+        f2.addEventListener('input', persist);
+        var mainForm = document.querySelector('form[action="{{ url_for('run_compare') }}"]');
+        if (mainForm) {
+          mainForm.addEventListener('submit', function () {
+            pushHist(HIST1, f1.value);
+            pushHist(HIST2, f2.value);
+            persist();
+          });
+        }
+      })();
+
+      (function(){
+        var stopBtn = document.getElementById('stop-btn');
+        if (!stopBtn) return;
+        stopBtn.addEventListener('click', function(){
+          fetch('{{ url_for('stop_handler') }}', { method: 'POST', keepalive: true })
+            .finally(function(){ window.location.href = '{{ url_for('index') }}'; });
+        });
+      })();
+
+      (function () {
+        var toggle = document.getElementById('build_compare_toggle');
+        var panel = document.getElementById('build-compare-panel');
+        if (!toggle || !panel) return;
+        var kToggle = 'pc_build_compare_toggle';
+        function clearBuildCompareSelections() {
+          ['app_ascf', 'app_crm', 'app_uxf', 'app_dex', 'app_wef'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.checked = false;
+          });
+          panel.querySelectorAll('input, select, textarea').forEach(function (el) {
+            if (el.name === 'folder1_path' || el.name === 'folder2_path') return;
+            if (el.id && /^app_/.test(el.id)) return;
+            if (el.tagName === 'SELECT') {
+              el.selectedIndex = 0;
+            } else if (el.type === 'checkbox' || el.type === 'radio') {
+              el.checked = el.defaultChecked;
+            } else if (el.type === 'hidden') {
+              el.value = el.defaultValue;
+            } else {
+              el.value = el.defaultValue || '';
+            }
+          });
+          try { window.dispatchEvent(new CustomEvent('buildCompareCleared')); } catch (e) {}
+        }
+        function syncBuildPanel() {
+          panel.style.display = toggle.checked ? 'block' : 'none';
+        }
+        toggle.checked = false;
+        try { localStorage.removeItem(kToggle); } catch (e) {}
+        syncBuildPanel();
+        toggle.addEventListener('change', function () {
+          if (!toggle.checked) clearBuildCompareSelections();
+          syncBuildPanel();
+        });
+      })();
+
+      (function () {
+        var toggle = document.getElementById('env_path_toggle');
+        var panel = document.getElementById('environment-path-panel');
+        if (!toggle || !panel) return;
+        var kToggle = 'pc_env_path_toggle';
+        function syncEnvPanel() {
+          panel.style.display = toggle.checked ? 'block' : 'none';
+        }
+        toggle.checked = false;
+        try { localStorage.removeItem(kToggle); } catch (e) {}
+        syncEnvPanel();
+        toggle.addEventListener('change', function () {
+          toggle.disabled = false;
+          syncEnvPanel();
+          if (toggle.checked && panel) {
+            try { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+          }
+        });
+      })();
+
+      (function () {
+        var buildToggle = document.getElementById('build_compare_toggle');
+        var envToggle = document.getElementById('env_path_toggle');
+        if (!buildToggle || !envToggle) return;
+        function keepModeTogglesEnabled() {
+          buildToggle.disabled = false;
+          envToggle.disabled = false;
+        }
+        keepModeTogglesEnabled();
+        buildToggle.addEventListener('change', keepModeTogglesEnabled);
+        envToggle.addEventListener('change', keepModeTogglesEnabled);
+        setInterval(keepModeTogglesEnabled, 2000);
+      })();
+
+      (function () {
+        var sshHost = document.getElementById('env_ssh_host');
+        var sshUser = document.getElementById('env_ssh_username');
+        var sshPass = document.getElementById('env_ssh_password');
+        var sshPort = document.getElementById('env_ssh_port');
+        var sshPath = document.getElementById('env_ssh_remote_path');
+        var envJarNames = document.getElementById('env_ssh_jar_names');
+        var btn = document.getElementById('btn-validate-env-jars');
+        var statusEl = document.getElementById('env-jars-status');
+        if (!btn) return;
+        var kHost = 'pc_env_ssh_host';
+        var kUser = 'pc_env_ssh_username';
+        var kPort = 'pc_env_ssh_port';
+        var kRemote = 'pc_env_ssh_remote_path';
+        var kJarNames = 'pc_env_ssh_jar_names';
+        function loadSaved() {
+          try {
+            if (sshHost && !sshHost.value) sshHost.value = localStorage.getItem(kHost) || '';
+            if (sshUser && !sshUser.value) sshUser.value = localStorage.getItem(kUser) || '';
+            if (sshPort && !sshPort.value) sshPort.value = localStorage.getItem(kPort) || '22';
+            if (sshPath && !sshPath.value) sshPath.value = localStorage.getItem(kRemote) || '';
+            if (envJarNames && !envJarNames.value) envJarNames.value = localStorage.getItem(kJarNames) || '';
+          } catch (e) {}
+        }
+        function persistNonSecret() {
+          try {
+            if (sshHost) localStorage.setItem(kHost, sshHost.value || '');
+            if (sshUser) localStorage.setItem(kUser, sshUser.value || '');
+            if (sshPort) localStorage.setItem(kPort, sshPort.value || '22');
+            if (sshPath) localStorage.setItem(kRemote, sshPath.value || '');
+            if (envJarNames) localStorage.setItem(kJarNames, envJarNames.value || '');
+          } catch (e) {}
+        }
+        loadSaved();
+        [sshHost, sshUser, sshPort, sshPath, envJarNames].forEach(function (el) {
+          if (el) el.addEventListener('input', persistNonSecret);
+        });
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        btn.addEventListener('click', function () {
+          var jarNames = (envJarNames && envJarNames.value || '').trim();
+          var payload = {
+            mode: 'ssh',
+            host: (sshHost && sshHost.value || '').trim(),
+            username: (sshUser && sshUser.value || '').trim(),
+            password: sshPass ? sshPass.value : '',
+            port: parseInt((sshPort && sshPort.value) || '22', 10) || 22,
+            path: (sshPath && sshPath.value || '').trim(),
+            env_ssh_jar_names: jarNames,
+            jar_names: jarNames
+          };
+          if (!payload.host) { setStatus('Enter host / IP address.', true); return; }
+          if (!payload.username) { setStatus('Enter SSH username.', true); return; }
+          if (!payload.password) { setStatus('Enter SSH password.', true); return; }
+          if (!payload.path) { setStatus('Enter remote environment path.', true); return; }
+          if (!jarNames) {
+            setStatus('Enter JAR name(s) to search (e.g. AmdocsSecurityManager.jar).', true);
+            return;
+          }
+          setStatus('Connecting via SSH and searching environment for JAR manifest versions…', false);
+          persistNonSecret();
+          btn.disabled = true;
+          fetch('{{ url_for("api_validate_environment_jars") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+              return { ok: r.ok, data: data };
+            });
+          }).then(function (res) {
+            btn.disabled = false;
+            if (!res.ok || !res.data.ok) {
+              setStatus((res.data && res.data.error) || 'Validation failed.', true);
+              return;
+            }
+            var rows = res.data.rows || [];
+            var summary = res.data.summary || {};
+            var reportUrl = res.data.report_url || '';
+            if (reportUrl) {
+              var opened = window.open(reportUrl, '_blank', 'noopener,noreferrer');
+              if (opened) {
+                setStatus('HTML report opened in a new tab (' + (summary.total || rows.length) + ' result row(s)).', false);
+              } else {
+                setStatus('Report ready — allow pop-ups, then open: ' + reportUrl, false);
+              }
+            } else {
+              setStatus('Search completed (' + (summary.total || rows.length) + ' result row(s)).', false);
+            }
+          }).catch(function () {
+            btn.disabled = false;
+            setStatus('Network error — could not validate environment.', true);
+          });
+        });
+      })();
+
+      (function () {
+        var btn = document.getElementById('btn-crm-base-paths');
+        var wrap = document.getElementById('crm-base-paths-wrap');
+        var scroll = document.getElementById('crm-base-paths-scroll');
+        var toolbar = document.getElementById('crm-base-paths-toolbar');
+        var btnToggle = document.getElementById('btn-crm-toggle-expand');
+        var tbody = document.getElementById('crm-base-paths-tbody');
+        var statusEl = document.getElementById('crm-base-paths-status');
+        var amssWrap = document.getElementById('amss-base-paths-wrap');
+        var amssToolbar = document.getElementById('amss-base-paths-toolbar');
+        var amssStatusEl = document.getElementById('amss-base-paths-status');
+        var viewTitle = document.getElementById('crm-amss-paths-view-title');
+        if (!btn || !wrap || !tbody) return;
+        function hideAmssPaths() {
+          if (amssWrap) amssWrap.style.display = 'none';
+          if (amssToolbar) amssToolbar.style.display = 'none';
+          if (amssStatusEl) { amssStatusEl.textContent = ''; amssStatusEl.style.display = 'none'; }
+        }
+        function setMinimized(on) {
+          if (!scroll || !btnToggle) return;
+          if (on) {
+            scroll.classList.add('minimized');
+            btnToggle.textContent = 'Expand table';
+          } else {
+            scroll.classList.remove('minimized');
+            btnToggle.textContent = 'Minimize table';
+          }
+        }
+        if (btnToggle && scroll) {
+          btnToggle.addEventListener('click', function () {
+            setMinimized(!scroll.classList.contains('minimized'));
+          });
+        }
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        function copyPathToClipboard(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+
+        function openCrmPathInExplorer(path) {
+          return fetch('{{ url_for("api_open_path_in_explorer") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path }),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try {
+                data = text ? JSON.parse(text) : {};
+              } catch (e) {}
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          });
+        }
+        function setBuildPath(fieldName, path) {
+          var input = document.querySelector('input[name="' + fieldName + '"]');
+          if (!input) return;
+          input.value = path;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          setStatus('Filled ' + (fieldName === 'folder1_path' ? 'Old build' : 'New build') + ' with ' + path, false);
+        }
+
+        btn.addEventListener('click', function () {
+          hideAmssPaths();
+          if (viewTitle) { viewTitle.style.display = 'block'; viewTitle.style.color = '#0369a1'; viewTitle.textContent = 'CRM base paths'; }
+          setStatus('Loading…', false);
+          fetch('{{ url_for("api_crm_build_base_paths") }}')
+            .then(function (r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (data) {
+              var rows = data.bases || [];
+              tbody.innerHTML = '';
+              rows.forEach(function (row) {
+                var path = (row.path || '').trim();
+                var label = row.label || 'Path';
+                var tr = document.createElement('tr');
+                var tdL = document.createElement('td');
+                tdL.textContent = label;
+                var tdP = document.createElement('td');
+                tdP.textContent = path;
+                var tdA = document.createElement('td');
+                tdA.className = 'crm-path-actions';
+                var bOld = document.createElement('button');
+                bOld.type = 'button';
+                bOld.className = 'btn-tiny';
+                bOld.style.background = '#0369a1';
+                bOld.style.color = '#fff';
+                bOld.textContent = 'Use as Old';
+                bOld.disabled = !path;
+                if (path) bOld.addEventListener('click', function () { setBuildPath('folder1_path', path); });
+                var bNew = document.createElement('button');
+                bNew.type = 'button';
+                bNew.className = 'btn-tiny';
+                bNew.style.background = '#2563eb';
+                bNew.style.color = '#fff';
+                bNew.textContent = 'Use as New';
+                bNew.disabled = !path;
+                if (path) bNew.addEventListener('click', function () { setBuildPath('folder2_path', path); });
+                var bOpen = document.createElement('button');
+                bOpen.type = 'button';
+                bOpen.className = 'btn-tiny browse';
+                bOpen.textContent = 'Open in Explorer';
+                bOpen.disabled = !path;
+                if (path) {
+                  bOpen.addEventListener('click', function () {
+                    openCrmPathInExplorer(path).then(function (res) {
+                      if (res.ok && res.data && res.data.ok) {
+                        setStatus('Opened in Windows Explorer: ' + path, false);
+                        return;
+                      }
+                      if (
+                        res.status === 403 ||
+                        res.status === 501 ||
+                        (res.data && res.data.fallback === 'copy')
+                      ) {
+                        copyPathToClipboard(path).then(function () {
+                          setStatus(
+                            'Path copied to clipboard — paste into Explorer address bar (Win+E). ' + path,
+                            false
+                          );
+                        });
+                        return;
+                      }
+                      var err = (res.data && res.data.error) || 'Could not open folder.';
+                      copyPathToClipboard(path).then(function () {
+                        setStatus(err + ' Path also copied: ' + path, true);
+                      });
+                    }).catch(function () {
+                      copyPathToClipboard(path).then(function () {
+                        setStatus('Network error — path copied: ' + path, true);
+                      });
+                    });
+                  });
+                }
+                tdA.appendChild(bOld);
+                tdA.appendChild(bNew);
+                tdA.appendChild(bOpen);
+                tr.appendChild(tdL);
+                tr.appendChild(tdP);
+                tr.appendChild(tdA);
+                tbody.appendChild(tr);
+              });
+              wrap.style.display = 'block';
+              if (toolbar) toolbar.style.display = rows.length ? 'block' : 'none';
+              setMinimized(false);
+              if (viewTitle) viewTitle.textContent = 'CRM base paths (' + rows.length + ' versions)';
+              setStatus(rows.length ? ('Loaded ' + rows.length + ' CRM path(s).') : 'No paths returned.', false);
+            })
+            .catch(function () {
+              setStatus('Could not load paths. Is the app running?', true);
+            });
+        });
+      })();
+
+      (function () {
+        var btn = document.getElementById('btn-amss-base-paths');
+        var wrap = document.getElementById('amss-base-paths-wrap');
+        var scroll = document.getElementById('amss-base-paths-scroll');
+        var toolbar = document.getElementById('amss-base-paths-toolbar');
+        var btnToggle = document.getElementById('btn-amss-toggle-expand');
+        var tbody = document.getElementById('amss-base-paths-tbody');
+        var statusEl = document.getElementById('amss-base-paths-status');
+        var crmWrap = document.getElementById('crm-base-paths-wrap');
+        var crmToolbar = document.getElementById('crm-base-paths-toolbar');
+        var crmStatusEl = document.getElementById('crm-base-paths-status');
+        var viewTitle = document.getElementById('crm-amss-paths-view-title');
+        if (!btn || !wrap || !tbody) return;
+        function hideCrmPaths() {
+          if (crmWrap) crmWrap.style.display = 'none';
+          if (crmToolbar) crmToolbar.style.display = 'none';
+          if (crmStatusEl) { crmStatusEl.textContent = ''; crmStatusEl.style.display = 'none'; }
+        }
+        function setMinimized(on) {
+          if (!scroll || !btnToggle) return;
+          if (on) {
+            scroll.classList.add('minimized');
+            btnToggle.textContent = 'Expand table';
+          } else {
+            scroll.classList.remove('minimized');
+            btnToggle.textContent = 'Minimize table';
+          }
+        }
+        if (btnToggle && scroll) {
+          btnToggle.addEventListener('click', function () {
+            setMinimized(!scroll.classList.contains('minimized'));
+          });
+        }
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        function copyPathToClipboard(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+        function openPathInExplorer(path) {
+          return fetch('{{ url_for("api_open_path_in_explorer") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path }),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          });
+        }
+        function buildAmssPath(versionCode) {
+          return '\\\\raaisilon\\\\cmprod\\\\pbg\\\\cmbuild\\\\AMSS\\\\' + versionCode;
+        }
+        var amssBaseRows = [
+          { label: 'v9.0PMX10_1.1' },
+          { label: 'v9.3PMX10_1' },
+          { label: 'v10_00' },
+          { label: 'v800' },
+          { label: 'v900' },
+          { label: 'v901' },
+          { label: 'v901_TSP2' },
+          { label: 'v910' },
+          { label: 'v920' },
+          { label: 'v921' },
+          { label: 'v922' },
+          { label: 'v930' },
+          { label: 'v9221' },
+          { label: 'v9222' },
+          { label: 'v92201' }
+        ];
+        function setBuildPath(fieldName, path) {
+          var input = document.querySelector('input[name="' + fieldName + '"]');
+          if (!input) return;
+          input.value = path;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          setStatus('Filled ' + (fieldName === 'folder1_path' ? 'Old build' : 'New build') + ' with ' + path, false);
+        }
+        btn.addEventListener('click', function () {
+          hideCrmPaths();
+          if (viewTitle) { viewTitle.style.display = 'block'; viewTitle.style.color = '#0f766e'; viewTitle.textContent = 'AMSS base paths'; }
+          setStatus('Loading…', false);
+          tbody.innerHTML = '';
+          amssBaseRows.forEach(function (row) {
+            row.path = buildAmssPath(row.label);
+            var tr = document.createElement('tr');
+            var tdL = document.createElement('td');
+            tdL.textContent = row.label;
+            var tdP = document.createElement('td');
+            tdP.textContent = row.path;
+            var tdA = document.createElement('td');
+            tdA.className = 'crm-path-actions';
+            var bOld = document.createElement('button');
+            bOld.type = 'button';
+            bOld.className = 'btn-tiny';
+            bOld.style.background = '#0f766e';
+            bOld.style.color = '#fff';
+            bOld.textContent = 'Use as Old';
+            bOld.addEventListener('click', function () { setBuildPath('folder1_path', row.path); });
+            var bNew = document.createElement('button');
+            bNew.type = 'button';
+            bNew.className = 'btn-tiny';
+            bNew.style.background = '#2563eb';
+            bNew.style.color = '#fff';
+            bNew.textContent = 'Use as New';
+            bNew.addEventListener('click', function () { setBuildPath('folder2_path', row.path); });
+            var bOpen = document.createElement('button');
+            bOpen.type = 'button';
+            bOpen.className = 'btn-tiny browse';
+            bOpen.textContent = 'Open in Explorer';
+            bOpen.addEventListener('click', function () {
+              openPathInExplorer(row.path).then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  setStatus('Opened in Windows Explorer: ' + row.path, false);
+                  return;
+                }
+                if (res.status === 403 || res.status === 501 || (res.data && res.data.fallback === 'copy')) {
+                  copyPathToClipboard(row.path).then(function () {
+                    setStatus('Path copied to clipboard — paste into Explorer address bar (Win+E). ' + row.path, false);
+                  });
+                  return;
+                }
+                var err = (res.data && res.data.error) || 'Could not open folder.';
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus(err + ' Path also copied: ' + row.path, true);
+                });
+              }).catch(function () {
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus('Network error — path copied: ' + row.path, true);
+                });
+              });
+            });
+            tdA.appendChild(bOld);
+            tdA.appendChild(bNew);
+            tdA.appendChild(bOpen);
+            tr.appendChild(tdL);
+            tr.appendChild(tdP);
+            tr.appendChild(tdA);
+            tbody.appendChild(tr);
+          });
+          wrap.style.display = 'block';
+          if (toolbar) toolbar.style.display = amssBaseRows.length ? 'block' : 'none';
+          setMinimized(false);
+          if (viewTitle) viewTitle.textContent = 'AMSS base paths (' + amssBaseRows.length + ' versions)';
+          setStatus('Loaded ' + amssBaseRows.length + ' AMSS path(s).', false);
+        });
+      })();
+
+      (function () {
+        var btn = document.getElementById('btn-ascf-base-paths');
+        var wrap = document.getElementById('ascf-base-paths-wrap');
+        var scroll = document.getElementById('ascf-base-paths-scroll');
+        var toolbar = document.getElementById('ascf-base-paths-toolbar');
+        var btnToggle = document.getElementById('btn-ascf-toggle-expand');
+        var tbody = document.getElementById('ascf-base-paths-tbody');
+        var statusEl = document.getElementById('ascf-base-paths-status');
+        if (!btn || !wrap || !tbody) return;
+
+        function setMinimized(on) {
+          if (!scroll || !btnToggle) return;
+          if (on) {
+            scroll.classList.add('minimized');
+            btnToggle.textContent = 'Expand table';
+          } else {
+            scroll.classList.remove('minimized');
+            btnToggle.textContent = 'Minimize table';
+          }
+        }
+        if (btnToggle && scroll) {
+          btnToggle.addEventListener('click', function () {
+            setMinimized(!scroll.classList.contains('minimized'));
+          });
+        }
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        function copyPathToClipboard(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+        function openPathInExplorer(path) {
+          return fetch('{{ url_for("api_open_path_in_explorer") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path }),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          });
+        }
+        function buildAscfPath(versionCode) {
+          return '\\\\inpnqascflb02\\\\uif_' + versionCode + '\\\\uif';
+        }
+        var ascfBaseRows = [
+          { label: '10250' },
+          { label: '10241' },
+          { label: '10240' },
+          { label: '10100' },
+          { label: '9301' },
+          { label: '9221' },
+          { label: '9005' },
+          { label: '9004' },
+          { label: '9003' },
+          { label: '9000' },
+          { label: '8203' },
+          { label: '8202' },
+          { label: '8201' }
+        ];
+        function setBuildPath(fieldName, path) {
+          var input = document.querySelector('input[name="' + fieldName + '"]');
+          if (!input) return;
+          input.value = path;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          setStatus('Filled ' + (fieldName === 'folder1_path' ? 'Old build' : 'New build') + ' with ' + path, false);
+        }
+
+        btn.addEventListener('click', function () {
+          setStatus('Loading…', false);
+          tbody.innerHTML = '';
+          ascfBaseRows.forEach(function (row) {
+            row.path = buildAscfPath(row.label);
+            var tr = document.createElement('tr');
+            var tdL = document.createElement('td');
+            tdL.textContent = row.label;
+            var tdP = document.createElement('td');
+            tdP.textContent = row.path;
+            var tdA = document.createElement('td');
+            tdA.className = 'crm-path-actions';
+
+            var bOld = document.createElement('button');
+            bOld.type = 'button';
+            bOld.className = 'btn-tiny';
+            bOld.style.background = '#6d28d9';
+            bOld.style.color = '#fff';
+            bOld.textContent = 'Use as Old';
+            bOld.addEventListener('click', function () { setBuildPath('folder1_path', row.path); });
+
+            var bNew = document.createElement('button');
+            bNew.type = 'button';
+            bNew.className = 'btn-tiny';
+            bNew.style.background = '#2563eb';
+            bNew.style.color = '#fff';
+            bNew.textContent = 'Use as New';
+            bNew.addEventListener('click', function () { setBuildPath('folder2_path', row.path); });
+
+            var bOpen = document.createElement('button');
+            bOpen.type = 'button';
+            bOpen.className = 'btn-tiny browse';
+            bOpen.textContent = 'Open in Explorer';
+            bOpen.addEventListener('click', function () {
+              openPathInExplorer(row.path).then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  setStatus('Opened in Windows Explorer: ' + row.path, false);
+                  return;
+                }
+                if (res.status === 403 || res.status === 501 || (res.data && res.data.fallback === 'copy')) {
+                  copyPathToClipboard(row.path).then(function () {
+                    setStatus('Path copied to clipboard — paste into Explorer address bar (Win+E). ' + row.path, false);
+                  });
+                  return;
+                }
+                var err = (res.data && res.data.error) || 'Could not open folder.';
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus(err + ' Path also copied: ' + row.path, true);
+                });
+              }).catch(function () {
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus('Network error — path copied: ' + row.path, true);
+                });
+              });
+            });
+
+            tdA.appendChild(bOld);
+            tdA.appendChild(bNew);
+            tdA.appendChild(bOpen);
+            tr.appendChild(tdL);
+            tr.appendChild(tdP);
+            tr.appendChild(tdA);
+            tbody.appendChild(tr);
+          });
+          wrap.style.display = 'block';
+          if (toolbar) toolbar.style.display = ascfBaseRows.length ? 'block' : 'none';
+          setMinimized(true);
+          setStatus('Loaded ' + ascfBaseRows.length + ' ASCF path(s). Table is minimized — click Expand table to see all rows.', false);
+        });
+      })();
+
+      (function () {
+        var btn = document.getElementById('btn-uxf-base-paths');
+        var wrap = document.getElementById('uxf-base-paths-wrap');
+        var scroll = document.getElementById('uxf-base-paths-scroll');
+        var toolbar = document.getElementById('uxf-base-paths-toolbar');
+        var btnToggle = document.getElementById('btn-uxf-toggle-expand');
+        var tbody = document.getElementById('uxf-base-paths-tbody');
+        var statusEl = document.getElementById('uxf-base-paths-status');
+        var omniWrap = document.getElementById('omni-base-paths-wrap');
+        var omniToolbar = document.getElementById('omni-base-paths-toolbar');
+        var omniStatusEl = document.getElementById('omni-base-paths-status');
+        var viewTitle = document.getElementById('uxf-omni-paths-view-title');
+        if (!btn || !wrap || !tbody) return;
+
+        function hideOmniPaths() {
+          if (omniWrap) omniWrap.style.display = 'none';
+          if (omniToolbar) omniToolbar.style.display = 'none';
+          if (omniStatusEl) { omniStatusEl.textContent = ''; omniStatusEl.style.display = 'none'; }
+        }
+
+        function setMinimized(on) {
+          if (!scroll || !btnToggle) return;
+          if (on) {
+            scroll.classList.add('minimized');
+            btnToggle.textContent = 'Expand table';
+          } else {
+            scroll.classList.remove('minimized');
+            btnToggle.textContent = 'Minimize table';
+          }
+        }
+        if (btnToggle && scroll) {
+          btnToggle.addEventListener('click', function () {
+            setMinimized(!scroll.classList.contains('minimized'));
+          });
+        }
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        function copyPathToClipboard(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+        function openPathInExplorer(path) {
+          return fetch('{{ url_for("api_open_path_in_explorer") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path }),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          });
+        }
+        function buildUxfPath(versionCode) {
+          return '\\\\raaisilon\\\\cmprod\\\\pbg\\\\cmbuild\\\\LS\\\\' + versionCode;
+        }
+        function buildUxfDevPath(versionCode) {
+          return '\\\\raaisilon\\\\cmprod_dev\\\\pbg\\\\cmdev\\\\LS\\\\' + versionCode;
+        }
+        var uxfBaseRows = [
+          { label: 'v9.0PMX10_1.1' },
+          { label: 'v9.22' },
+          { label: 'v9.22.1' },
+          { label: 'v9_20PMX' },
+          { label: 'v9_21_PMX_10.2' },
+          { label: 'v9_30_PMX10_2_1' },
+          { label: 'v9_30_PMX102_1' },
+          { label: 'v10.1' },
+          { label: 'v900' },
+          { label: 'v901' },
+          { label: 'v901_USCC' },
+          { label: 'v902' },
+          { label: 'v910' },
+          { label: 'v920' },
+          { label: 'v921' },
+          { label: 'v930' },
+          { label: 'v930_TSP2' },
+          { label: 'v931' },
+          { label: 'v1000' },
+          { label: 'v10.1', base: 'dev' },
+          { label: 'v10.1.1', base: 'dev' },
+          { label: 'v10.2', base: 'dev' },
+          { label: 'v10.3', base: 'dev' },
+          { label: 'v10.24', base: 'dev' },
+          { label: 'v10.24.1', base: 'dev' },
+          { label: 'v10.25', base: 'dev' },
+          { label: 'v930', base: 'dev' },
+          { label: 'v931', base: 'dev' }
+        ];
+        function setBuildPath(fieldName, path) {
+          var input = document.querySelector('input[name="' + fieldName + '"]');
+          if (!input) return;
+          input.value = path;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          setStatus('Filled ' + (fieldName === 'folder1_path' ? 'Old build' : 'New build') + ' with ' + path, false);
+        }
+
+        btn.addEventListener('click', function () {
+          hideOmniPaths();
+          if (viewTitle) { viewTitle.style.display = 'block'; viewTitle.style.color = '#166534'; viewTitle.textContent = 'UXF base paths'; }
+          setStatus('Loading…', false);
+          tbody.innerHTML = '';
+          uxfBaseRows.forEach(function (row) {
+            row.path = row.base === 'dev' ? buildUxfDevPath(row.label) : buildUxfPath(row.label);
+            var tr = document.createElement('tr');
+            var tdL = document.createElement('td');
+            tdL.textContent = row.label;
+            var tdEnv = document.createElement('td');
+            tdEnv.textContent = row.base === 'dev' ? 'cmdev' : 'Production';
+            var tdP = document.createElement('td');
+            tdP.textContent = row.path;
+            var tdA = document.createElement('td');
+            tdA.className = 'crm-path-actions';
+
+            var bOld = document.createElement('button');
+            bOld.type = 'button';
+            bOld.className = 'btn-tiny';
+            bOld.style.background = '#047857';
+            bOld.style.color = '#fff';
+            bOld.textContent = 'Use as Old';
+            bOld.addEventListener('click', function () { setBuildPath('folder1_path', row.path); });
+
+            var bNew = document.createElement('button');
+            bNew.type = 'button';
+            bNew.className = 'btn-tiny';
+            bNew.style.background = '#2563eb';
+            bNew.style.color = '#fff';
+            bNew.textContent = 'Use as New';
+            bNew.addEventListener('click', function () { setBuildPath('folder2_path', row.path); });
+
+            var bOpen = document.createElement('button');
+            bOpen.type = 'button';
+            bOpen.className = 'btn-tiny browse';
+            bOpen.textContent = 'Open in Explorer';
+            bOpen.addEventListener('click', function () {
+              openPathInExplorer(row.path).then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  setStatus('Opened in Windows Explorer: ' + row.path, false);
+                  return;
+                }
+                if (res.status === 403 || res.status === 501 || (res.data && res.data.fallback === 'copy')) {
+                  copyPathToClipboard(row.path).then(function () {
+                    setStatus('Path copied to clipboard — paste into Explorer address bar (Win+E). ' + row.path, false);
+                  });
+                  return;
+                }
+                var err = (res.data && res.data.error) || 'Could not open folder.';
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus(err + ' Path also copied: ' + row.path, true);
+                });
+              }).catch(function () {
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus('Network error — path copied: ' + row.path, true);
+                });
+              });
+            });
+
+            tdA.appendChild(bOld);
+            tdA.appendChild(bNew);
+            tdA.appendChild(bOpen);
+            tr.appendChild(tdL);
+            tr.appendChild(tdEnv);
+            tr.appendChild(tdP);
+            tr.appendChild(tdA);
+            tbody.appendChild(tr);
+          });
+          wrap.style.display = 'block';
+          if (toolbar) toolbar.style.display = uxfBaseRows.length ? 'block' : 'none';
+          setMinimized(false);
+          if (viewTitle) viewTitle.textContent = 'UXF base paths (' + uxfBaseRows.length + ' versions)';
+          setStatus('Loaded ' + uxfBaseRows.length + ' UXF path(s).', false);
+        });
+      })();
+
+      (function () {
+        var btn = document.getElementById('btn-omni-base-paths');
+        var wrap = document.getElementById('omni-base-paths-wrap');
+        var scroll = document.getElementById('omni-base-paths-scroll');
+        var toolbar = document.getElementById('omni-base-paths-toolbar');
+        var btnToggle = document.getElementById('btn-omni-toggle-expand');
+        var tbody = document.getElementById('omni-base-paths-tbody');
+        var statusEl = document.getElementById('omni-base-paths-status');
+        var uxfWrap = document.getElementById('uxf-base-paths-wrap');
+        var uxfToolbar = document.getElementById('uxf-base-paths-toolbar');
+        var uxfStatusEl = document.getElementById('uxf-base-paths-status');
+        var viewTitle = document.getElementById('uxf-omni-paths-view-title');
+        if (!btn || !wrap || !tbody) return;
+
+        function hideUxfPaths() {
+          if (uxfWrap) uxfWrap.style.display = 'none';
+          if (uxfToolbar) uxfToolbar.style.display = 'none';
+          if (uxfStatusEl) { uxfStatusEl.textContent = ''; uxfStatusEl.style.display = 'none'; }
+        }
+
+        function setMinimized(on) {
+          if (!scroll || !btnToggle) return;
+          if (on) {
+            scroll.classList.add('minimized');
+            btnToggle.textContent = 'Expand table';
+          } else {
+            scroll.classList.remove('minimized');
+            btnToggle.textContent = 'Minimize table';
+          }
+        }
+        if (btnToggle && scroll) {
+          btnToggle.addEventListener('click', function () {
+            setMinimized(!scroll.classList.contains('minimized'));
+          });
+        }
+        function setStatus(msg, isErr) {
+          if (!statusEl) return;
+          statusEl.textContent = msg || '';
+          statusEl.style.display = msg ? 'block' : 'none';
+          statusEl.style.color = isErr ? '#b91c1c' : '#64748b';
+        }
+        function copyPathToClipboard(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+          }
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            return Promise.resolve();
+          } finally {
+            document.body.removeChild(ta);
+          }
+        }
+        function openPathInExplorer(path) {
+          return fetch('{{ url_for("api_open_path_in_explorer") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path }),
+          }).then(function (r) {
+            return r.text().then(function (text) {
+              var data = {};
+              try { data = text ? JSON.parse(text) : {}; } catch (e) {}
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          });
+        }
+        function omniRepFolder(versionLabel) {
+          return 'v' + String(versionLabel).replace(/\./g, '');
+        }
+        function buildOmniPath(versionLabel) {
+          return '\\\\raaisilon\\\\cmprod\\\\pbg\\\\cmbuild\\\\CM_REP\\\\' + omniRepFolder(versionLabel);
+        }
+        function buildOmniDevPath(folderName) {
+          return '\\\\raaisilon\\\\cmprod_dev\\\\pbg\\\\cmdev\\\\CM_REP\\\\' + folderName;
+        }
+        var omniBaseRows = [
+          { label: '9.3.1' },
+          { label: '9.3.0' },
+          { label: '10.1.0' },
+          { label: '10.0.1' },
+          { label: '9.22.1' },
+          { label: '10.2' },
+          { label: '10.0.0' },
+          { label: '9.3.2' },
+          { label: '10.24' },
+          { label: '9.3PMX10_1', base: 'dev' },
+          { label: '9.3PMX10_1.1', base: 'dev' },
+          { label: 'v10.1', base: 'dev' },
+          { label: 'v10.2', base: 'dev' },
+          { label: 'v930', base: 'dev' },
+          { label: 'v931', base: 'dev' },
+          { label: 'v932', base: 'dev' },
+          { label: 'v933', base: 'dev' },
+          { label: 'v934', base: 'dev' },
+          { label: 'v1000_PMX102_1', base: 'dev' },
+          { label: 'v1001', base: 'dev' }
+        ];
+        function setBuildPath(fieldName, path) {
+          var input = document.querySelector('input[name="' + fieldName + '"]');
+          if (!input) return;
+          input.value = path;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          setStatus('Filled ' + (fieldName === 'folder1_path' ? 'Old build' : 'New build') + ' with ' + path, false);
+        }
+
+        btn.addEventListener('click', function () {
+          hideUxfPaths();
+          if (viewTitle) { viewTitle.style.display = 'block'; viewTitle.style.color = '#1e40af'; viewTitle.textContent = 'OMNI base paths'; }
+          setStatus('Loading…', false);
+          tbody.innerHTML = '';
+          omniBaseRows.forEach(function (row) {
+            row.path = row.base === 'dev' ? buildOmniDevPath(row.label) : buildOmniPath(row.label);
+            var tr = document.createElement('tr');
+            var tdL = document.createElement('td');
+            tdL.textContent = row.label;
+            var tdEnv = document.createElement('td');
+            tdEnv.textContent = row.base === 'dev' ? 'cmdev' : 'Production';
+            var tdP = document.createElement('td');
+            tdP.textContent = row.path;
+            var tdA = document.createElement('td');
+            tdA.className = 'crm-path-actions';
+
+            var bOld = document.createElement('button');
+            bOld.type = 'button';
+            bOld.className = 'btn-tiny';
+            bOld.style.background = '#1d4ed8';
+            bOld.style.color = '#fff';
+            bOld.textContent = 'Use as Old';
+            bOld.addEventListener('click', function () { setBuildPath('folder1_path', row.path); });
+
+            var bNew = document.createElement('button');
+            bNew.type = 'button';
+            bNew.className = 'btn-tiny';
+            bNew.style.background = '#2563eb';
+            bNew.style.color = '#fff';
+            bNew.textContent = 'Use as New';
+            bNew.addEventListener('click', function () { setBuildPath('folder2_path', row.path); });
+
+            var bOpen = document.createElement('button');
+            bOpen.type = 'button';
+            bOpen.className = 'btn-tiny browse';
+            bOpen.textContent = 'Open in Explorer';
+            bOpen.addEventListener('click', function () {
+              openPathInExplorer(row.path).then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  setStatus('Opened in Windows Explorer: ' + row.path, false);
+                  return;
+                }
+                if (res.status === 403 || res.status === 501 || (res.data && res.data.fallback === 'copy')) {
+                  copyPathToClipboard(row.path).then(function () {
+                    setStatus('Path copied to clipboard — paste into Explorer address bar (Win+E). ' + row.path, false);
+                  });
+                  return;
+                }
+                var err = (res.data && res.data.error) || 'Could not open folder.';
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus(err + ' Path also copied: ' + row.path, true);
+                });
+              }).catch(function () {
+                copyPathToClipboard(row.path).then(function () {
+                  setStatus('Network error — path copied: ' + row.path, true);
+                });
+              });
+            });
+
+            tdA.appendChild(bOld);
+            tdA.appendChild(bNew);
+            tdA.appendChild(bOpen);
+            tr.appendChild(tdL);
+            tr.appendChild(tdEnv);
+            tr.appendChild(tdP);
+            tr.appendChild(tdA);
+            tbody.appendChild(tr);
+          });
+          wrap.style.display = 'block';
+          if (toolbar) toolbar.style.display = omniBaseRows.length ? 'block' : 'none';
+          setMinimized(false);
+          if (viewTitle) viewTitle.textContent = 'OMNI base paths (' + omniBaseRows.length + ' versions)';
+          setStatus('Loaded ' + omniBaseRows.length + ' OMNI path(s).', false);
+        });
+      })();
+    </script>
+
+    <div class="card" id="ascf-copy-panel" style="display:none;">
+      <h3 style="margin:0 0 10px 0;font-size:0.95rem;">Copy build folders (ASCF)</h3>
+      <form id="copy-form" method="post" action="{{ url_for('copy_handler') }}">
+        <div class="options">
+          <label><input type="radio" name="copy_source" value="folder1" checked /> Copy from Old Build Path</label>
+          <label><input type="radio" name="copy_source" value="folder2" /> Copy from New Build Path</label>
+          <label>Destination path <input type="text" name="dest_path" placeholder="Enter destination path" /></label>
+          <label><input type="checkbox" name="overwrite" /> Overwrite if exists</label>
+        </div>
+        <input type="hidden" name="folder1_path" id="copy-folder1" />
+        <input type="hidden" name="folder2_path" id="copy-folder2" />
+        <div class="actions" style="margin-top:12px;"><button type="submit" class="btn-secondary">Copy</button></div>
+      </form>
+    </div>
+
+    <p style="margin:20px 0 8px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center;">
+      <a class="footer-link" href="{{ url_for('reports') }}">Browse comparison reports →</a>
+      <a class="footer-link" id="foundations-btn" href="{{ url_for('foundations') }}" style="display:none;color:#059669;">Foundations Link →</a>
+      <a class="footer-link" id="admin-tool-btn" href="{{ url_for('admin_tool') }}" style="display:none;color:#7c3aed;">Administrative Tool →</a>
+    </p>
+    </div>
+     <a href="/ai-testgen">🤖 AI Test-Case Generator</a>
+
+    <script>
+      (function () {
+        var compareForm = document.querySelector('form[action="{{ url_for("run_compare") }}"]');
+        var appAscf = document.getElementById('app_ascf');
+        var appCrm = document.getElementById('app_crm');
+        var appUxf = document.getElementById('app_uxf');
+        var appDex = document.getElementById('app_dex');
+        var appWef = document.getElementById('app_wef');
+        var nasPaths = document.getElementById('nas-build-paths-section');
+        var ascfPanel = document.getElementById('ascf-only-panel');
+        var ascfOptionsPanel = document.getElementById('ascf-only-panel-options');
+        var ascfPathsPanel = document.getElementById('ascf-only-panel-paths');
+        var uxfPathsPanel = document.getElementById('uxf-only-panel-paths');
+        var crmModePanel = document.getElementById('crm-only-panel-mode');
+        var crmOptionsPanel = document.getElementById('crm-only-panel-options');
+        var crmPathsPanel = document.getElementById('crm-only-panel');
+        var uxfPanel = document.getElementById('uxf-only-panel');
+        var dexPanel = document.getElementById('dex-only-panel');
+        var wefPanel = document.getElementById('wef-only-panel');
+        var dexPrev = document.getElementById('dex_nexus_previous_version');
+        var dexLatest = document.getElementById('dex_nexus_latest_version');
+        var dexWebappPrev = document.getElementById('dex_webapp_ces_previous_version');
+        var dexWebappLatest = document.getElementById('dex_webapp_ces_latest_version');
+        var dexPreviewWrap = document.getElementById('dex-nexus-url-preview');
+        var dexPreviewPlaybook = document.getElementById('dex-nexus-preview-playbook');
+        var dexPreviewWebapp = document.getElementById('dex-nexus-preview-webapp');
+        var ascfCopyPanel = document.getElementById('ascf-copy-panel');
+        var foundationsBtn = document.getElementById('foundations-btn');
+        var adminToolBtn = document.getElementById('admin-tool-btn');
+
+        function setDisabled(root, disabled) {
+          if (!root) return;
+          root.querySelectorAll('input, select, textarea, button').forEach(function (el) {
+            if (el.type === 'hidden' && el.id === 'crm-mode-hidden' && !disabled) return;
+            el.disabled = disabled;
+          });
+        }
+
+        function exclusiveApp(changed) {
+          var boxes = [appAscf, appCrm, appUxf, appDex, appWef].filter(Boolean);
+          if (!changed || !changed.checked) return;
+          boxes.forEach(function (b) {
+            if (b !== changed) b.checked = false;
+          });
+        }
+
+        function refreshAscfFullOptions() {
+          var ascf = appAscf && appAscf.checked;
+          var fullMode = compareForm ? compareForm.querySelector('input[name="mode"][value="full"]') : null;
+          var showOpts = ascf && fullMode && fullMode.checked;
+          if (ascfOptionsPanel) ascfOptionsPanel.style.display = showOpts ? '' : 'none';
+          setDisabled(ascfOptionsPanel, !showOpts);
+        }
+
+        function refreshAppUi() {
+          var ascf = appAscf && appAscf.checked;
+          var crm = appCrm && appCrm.checked;
+          var uxf = appUxf && appUxf.checked;
+          var dex = appDex && appDex.checked;
+          var wef = appWef && appWef.checked;
+          if (ascfPanel) ascfPanel.style.display = ascf ? '' : 'none';
+          if (ascfPathsPanel) ascfPathsPanel.style.display = ascf ? '' : 'none';
+          if (uxfPathsPanel) uxfPathsPanel.style.display = uxf ? '' : 'none';
+          if (crmModePanel) crmModePanel.style.display = crm ? '' : 'none';
+          if (crmOptionsPanel) crmOptionsPanel.style.display = crm ? '' : 'none';
+          if (crmPathsPanel) crmPathsPanel.style.display = crm ? '' : 'none';
+          if (uxfPanel) uxfPanel.style.display = uxf ? '' : 'none';
+          if (dexPanel) dexPanel.style.display = dex ? '' : 'none';
+          if (wefPanel) wefPanel.style.display = wef ? '' : 'none';
+          if (nasPaths) nasPaths.style.display = wef ? 'none' : '';
+          if (ascfCopyPanel) ascfCopyPanel.style.display = ascf ? '' : 'none';
+          setDisabled(ascfPanel, !ascf);
+          setDisabled(ascfPathsPanel, !ascf);
+          setDisabled(uxfPathsPanel, !uxf);
+          setDisabled(crmModePanel, !crm);
+          setDisabled(crmOptionsPanel, !crm);
+          setDisabled(uxfPanel, !uxf);
+          setDisabled(dexPanel, !dex);
+          setDisabled(wefPanel, !wef);
+          refreshAscfFullOptions();
+          [foundationsBtn, adminToolBtn].forEach(function (lnk) {
+            if (!lnk) return;
+            lnk.style.display = ascf ? '' : 'none';
+          });
+        }
+
+        [appAscf, appCrm, appUxf, appDex, appWef].forEach(function (cb) {
+          if (!cb) return;
+          cb.addEventListener('change', function () {
+            exclusiveApp(cb);
+            refreshAppUi();
+          });
+        });
+        if (compareForm) {
+          compareForm.querySelectorAll('input[name="mode"]').forEach(function (r) {
+            r.addEventListener('change', refreshAscfFullOptions);
+          });
+        }
+        function dexReleaseTrain(v) {
+          var parts = (v || '').trim().split('.');
+          if (parts.length < 3) return null;
+          return parts.slice(0, 3).join('.');
+        }
+        function dexProductUrls(v, mavenName) {
+          var full = (v || '').trim();
+          var train = dexReleaseTrain(full);
+          if (!train || !full || !/^\d+(?:\.\d+)+$/.test(full)) return null;
+          var base = 'https://illin3273:28081/nexus/content/repositories/amdocs-dex-ad-rpm-releases-' + train
+            + '/com/amdocs/digital/' + mavenName + '/' + full + '/' + mavenName + '-' + full;
+          if (mavenName === 'digital-playbook') {
+            return { jar: base + '.jar', tar: base + '.tar' };
+          }
+          return { sources_jar: base + '-sources.jar', pom: base + '.pom', war: base + '.war' };
+        }
+        function dexUrlListHtml(title, prevV, latestV, mavenName) {
+          var prev = dexProductUrls(prevV, mavenName);
+          var latest = dexProductUrls(latestV, mavenName);
+          if (!prev && !latest) return '';
+          var lines = '<div style="margin-bottom:10px;"><strong>' + title + '</strong></div>';
+          function block(label, urls) {
+            if (!urls) return '<p class="hint" style="margin:4px 0;">' + label + ': enter version</p>';
+            var s = '<p style="margin:4px 0 2px 0;font-weight:600;">' + label + '</p>';
+            Object.keys(urls).forEach(function (k) {
+              s += '<p style="margin:0 0 2px 0;font-size:12px;"><strong>' + k + ':</strong> <a href="' + urls[k] + '" target="_blank" rel="noopener" style="word-break:break-all;">' + urls[k] + '</a></p>';
+            });
+            return s;
+          }
+          return lines + block('Previous', prev) + block('Latest', latest);
+        }
+        function refreshDexNexusPreview() {
+          if (!dexPreviewWrap) return;
+          if (!(appDex && appDex.checked)) {
+            dexPreviewWrap.style.display = 'none';
+            return;
+          }
+          var pb = dexUrlListHtml('digital-playbook', dexPrev ? dexPrev.value : '', dexLatest ? dexLatest.value : '', 'digital-playbook');
+          var wb = dexUrlListHtml('digital-webapp-ces', dexWebappPrev ? dexWebappPrev.value : '', dexWebappLatest ? dexWebappLatest.value : '', 'digital-webapp-ces');
+          if (dexPreviewPlaybook) dexPreviewPlaybook.innerHTML = pb;
+          if (dexPreviewWebapp) dexPreviewWebapp.innerHTML = wb;
+          dexPreviewWrap.style.display = (pb || wb) ? '' : 'none';
+        }
+        [dexPrev, dexLatest, dexWebappPrev, dexWebappLatest].forEach(function (el) {
+          if (el) el.addEventListener('input', refreshDexNexusPreview);
+        });
+        if (appDex) appDex.addEventListener('change', refreshDexNexusPreview);
+
+        refreshAppUi();
+        refreshDexNexusPreview();
+        window.addEventListener('buildCompareCleared', function () {
+          refreshAppUi();
+          refreshDexNexusPreview();
+        });
+
+        if (compareForm) {
+          compareForm.addEventListener('submit', function () {
+            refreshAppUi();
+          });
+        }
+
+        var copyForm = document.getElementById('copy-form');
+        if (copyForm) {
+          copyForm.addEventListener('submit', function () {
+            var f1 = document.querySelector('input[name="folder1_path"]');
+            var f2 = document.querySelector('input[name="folder2_path"]');
+            var c1 = document.getElementById('copy-folder1');
+            var c2 = document.getElementById('copy-folder2');
+            if (c1 && f1) c1.value = f1.value || '';
+            if (c2 && f2) c2.value = f2.value || '';
+          });
+        }
+
+        (function () {
+          var select = document.getElementById('foss-product');
+          var jarInput = compareForm ? compareForm.querySelector('input[name="jar_name"]') : null;
+          var fossLib = document.getElementById('foss-lib');
+          function syncJar() {
+            if (!jarInput || !appAscf || !appAscf.checked) return;
+            var fossRadio = compareForm ? compareForm.querySelector('input[name="mode"][value="foss"]') : null;
+            if (fossRadio && fossRadio.checked && select && select.value) jarInput.value = select.value;
+            if (fossRadio && fossRadio.checked && fossLib && fossLib.value) jarInput.value = fossLib.value;
+          }
+          if (select) select.addEventListener('change', syncJar);
+          if (fossLib) fossLib.addEventListener('change', syncJar);
+          if (compareForm) {
+            compareForm.querySelectorAll('input[name="mode"]').forEach(function (r) {
+              r.addEventListener('change', syncJar);
+            });
+          }
+        })();
+      })();
+    </script>
+  </body>
+  </html>

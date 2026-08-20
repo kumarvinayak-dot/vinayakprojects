@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 7 — Foss product</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 0; background: #faf5ff; padding: 16px; }
+    .card { background: #fff; border: 1px solid #d8b4fe; border-radius: 12px; padding: 18px; max-width: 920px; margin: 0 auto; }
+    label { font-weight: 600; font-size: 13px; display: block; margin: 10px 0 6px; color: #5b21b6; }
+    input, select { width: 100%; padding: 10px 12px; border: 2px solid #7c3aed; border-radius: 8px; font-size: 13px; box-sizing: border-box; background: #fff; }
+    .step { color: #059669; font-weight: 700; margin-bottom: 8px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 7</div>
+    <h3 style="margin:0 0 12px;color:#6b21a8;">FOSS library selection</h3>
+    <div class="row">
+      <div>
+        <label>Foss product</label>
+        <select><option>commons-io.jar</option><option selected>log4j-core.jar</option><option>slf4j-api.jar</option></select>
+      </div>
+      <div>
+        <label>Jar name (auto-filled)</label>
+        <input value="log4j-core.jar" readonly />
+      </div>
+    </div>
+    <p style="font-size:12px;color:#64748b;margin:12px 0 0;">Choosing a Foss product fills the Jar name field. Repeat with each FOSS library on your adoption checklist.</p>
+  </div>
+</body>
+</html>

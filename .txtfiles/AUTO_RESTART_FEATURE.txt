@@ -1,0 +1,145 @@
+═══════════════════════════════════════════════════════════════════════════
+AUTO-RESTART FEATURE - NO MORE MANUAL CLEANUP!
+═══════════════════════════════════════════════════════════════════════════
+
+✅ NEW FEATURE: Automatic cleanup of existing server instances!
+
+The server now automatically stops any running instances before starting.
+No more "port already in use" errors!
+
+═══════════════════════════════════════════════════════════════════════════
+🚀 HOW IT WORKS
+═══════════════════════════════════════════════════════════════════════════
+
+When you start the server, it automatically:
+
+1. ✓ Scans for existing builtin_server.py processes
+2. ✓ Gracefully stops them
+3. ✓ Waits for cleanup to complete
+4. ✓ Starts the new server instance
+
+All in ONE command!
+
+═══════════════════════════════════════════════════════════════════════════
+💻 USAGE
+═══════════════════════════════════════════════════════════════════════════
+
+OPTION 1: Default (localhost:5000)
+> start_web_gui.bat
+
+OPTION 2: Custom IP and Port
+> py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+
+OPTION 3: Quick Restart Script
+> restart_server.bat
+
+═══════════════════════════════════════════════════════════════════════════
+📋 WHAT YOU'LL SEE
+═══════════════════════════════════════════════════════════════════════════
+
+========================================================================
+ASCF Comparison Server
+========================================================================
+
+Checking for existing server instances...
+  → Stopping existing server (PID: 12345)
+  → Waiting for processes to stop...
+  → Cleanup complete
+
+Starting server on 10.19.164.180:8080...
+✓ Built-in server running at http://10.19.164.180:8080
+
+Press Ctrl+C to stop the server
+
+═══════════════════════════════════════════════════════════════════════════
+✨ BENEFITS
+═══════════════════════════════════════════════════════════════════════════
+
+BEFORE:
+  ❌ Had to manually kill processes
+  ❌ Port already in use errors
+  ❌ Multiple commands needed
+  ❌ Task Manager hunting
+
+AFTER:
+  ✅ One command does everything
+  ✅ Automatic cleanup
+  ✅ No port conflicts
+  ✅ Just works!
+
+═══════════════════════════════════════════════════════════════════════════
+🔧 TECHNICAL DETAILS
+═══════════════════════════════════════════════════════════════════════════
+
+The server uses psutil library to:
+- Find all Python processes
+- Filter for builtin_server.py instances
+- Gracefully terminate them
+- Wait for cleanup before starting
+
+If psutil is not available:
+- Server still starts normally
+- Manual cleanup may be needed (rare)
+
+═══════════════════════════════════════════════════════════════════════════
+📦 REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════
+
+For auto-cleanup to work, install psutil:
+> pip install psutil
+
+If not installed:
+- Server will still work
+- Auto-cleanup will be skipped
+- You'll see a note in output
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 EXAMPLES
+═══════════════════════════════════════════════════════════════════════════
+
+Example 1: Start on localhost
+> py builtin_server.py
+  → Stops any existing servers
+  → Starts on 127.0.0.1:5000
+
+Example 2: Start on network IP
+> py builtin_server.py --host 10.19.164.180 --port 8080
+  → Stops any existing servers
+  → Starts on 10.19.164.180:8080
+
+Example 3: Use the batch file
+> start_web_gui.bat
+  → Automatically handles everything
+
+═══════════════════════════════════════════════════════════════════════════
+❓ FAQ
+═══════════════════════════════════════════════════════════════════════════
+
+Q: What if multiple people are running the server?
+A: Each user's server runs independently. Only YOUR old instances are killed.
+
+Q: Does it affect other Python programs?
+A: No! Only processes running builtin_server.py are affected.
+
+Q: What if I want to run multiple servers?
+A: Use different ports for each. They won't interfere with each other.
+
+Q: Can I disable auto-cleanup?
+A: It's automatic but graceful. If you need multiple instances, use different
+   ports (--port 8080, --port 8081, etc.)
+
+═══════════════════════════════════════════════════════════════════════════
+🎉 READY TO USE!
+═══════════════════════════════════════════════════════════════════════════
+
+Just run:
+> start_web_gui.bat
+
+OR
+
+> py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+
+The server will automatically clean up and start fresh! 🚀
+
+═══════════════════════════════════════════════════════════════════════════
+

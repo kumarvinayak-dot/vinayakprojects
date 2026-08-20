@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 9 — FOSS/Foundation report</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+    .header { background: linear-gradient(90deg,#065f46,#059669); color: #fff; padding: 18px 22px; }
+    .wrap { max-width: 900px; margin: 16px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #86efac; border-radius: 12px; padding: 16px; }
+    .step { color: #059669; font-weight: 700; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #ecfdf5; width: 38%; }
+    .match { color: #059669; font-weight: 700; }
+    .diff { color: #d97706; font-weight: 700; }
+    code { font-size: 11px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="margin:0;font-size:20px;">FOSS/Foundation JAR Version Comparison</h1>
+    <p style="margin:6px 0 0;opacity:.95;">Target JAR: log4j-core.jar</p>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="step">Step 9</div>
+      <table>
+        <tr><th>Folder 1 (old HF)</th><td><code>.../ASCF_HF_10240pb01hf09/.../log4j-core.jar</code></td></tr>
+        <tr><th>Implementation-Version (old)</th><td>2.17.1</td></tr>
+        <tr><th>Folder 2 (new HF)</th><td><code>.../ASCF_HF_10240pb01hf10/.../log4j-core.jar</code></td></tr>
+        <tr><th>Implementation-Version (new)</th><td class="diff">2.20.0</td></tr>
+        <tr><th>Summary</th><td class="diff">Versions differ — confirm expected FOSS adoption</td></tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

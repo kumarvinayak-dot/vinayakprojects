@@ -1,0 +1,48 @@
+Comparison Tool — Setup from Comparison Tool.zip (one line per step)
+
+Illustrated setup guide: docs/ASCF_COMPARE_TOOL_SETUP.html
+Full instructions: INSTALL_INSTRUCTIONS.md
+
+--- Before install ---
+
+1. Confirm you are on a Windows 10 or 11 PC (64-bit).
+2. Install Python 3.10 or newer from python.org if not already installed — check Add Python to PATH during install.
+3. Ensure ~50 GB free disk space on C: for large build comparisons.
+4. Confirm you can open corporate NAS/build UNC paths in Windows Explorer (e.g. \\ntnet\..., \\INPNQASCFLB02\...).
+5. Copy Comparison Tool.zip from your team lead to your PC (Desktop or Downloads).
+
+--- Install (one time) ---
+
+6. Right-click Comparison Tool.zip and choose Extract All.
+7. Open the extracted Comparison Tool folder.
+8. Double-click setup.cmd in the extracted folder.
+9. Wait for setup to finish (creates .venv and installs Python packages only — no file copy — typically 5–15 minutes).
+10. When you see Installation complete, press Enter.
+
+--- Use the tool (every day) ---
+
+12. Open the install folder and double-click start_server.bat.
+13. Wait a few seconds for the browser to open automatically.
+14. If the browser does not open, go to http://localhost:5000/crm manually.
+15. Enable Build Comparison, select your application (ASCF, CRM/AMSS, UXF/OMNI, or DEX), enter old and new build paths, and run comparisons.
+16. To stop the server, run STOP_SERVER.bat in the install folder.
+
+--- Optional ---
+
+17. For Environment Validation over HTTPS, run scripts\generate_https_cert.ps1 in the install folder, restart the server, and use https://localhost:5443/crm.
+18. For CRM Java source diffs, place cfr-0.152.jar at C:\cfr-0.152.jar (optional).
+
+--- Uninstall ---
+
+19. Stop the server (STOP_SERVER.bat).
+20. Run Uninstall Comparison Tool.bat in the install folder and type YES when prompted.
+
+--- Troubleshooting ---
+
+21. If Python 3.10+ not found: install Python with Add to PATH, then run setup.cmd again.
+22. If the browser shows Can't reach this page: run start_server.bat again, run CHECK_STATUS.bat, and use http://localhost:5000/crm only (not a network IP).
+23. If port 5000 is in use: run STOP_SERVER.bat, then start_server.bat again.
+24. If pip install fails (no internet/proxy): ask your team lead for offline wheels (see LOCAL_USER_SETUP.md).
+
+Install folder: wherever you extracted the ZIP (e.g. C:\Comparison Tool\Comparison Tool)
+Tool URL: http://localhost:5000/crm (localhost only — not shared on the network)

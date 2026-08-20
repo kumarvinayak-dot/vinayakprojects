@@ -1,0 +1,97 @@
+========================================
+DETAILED COMPARISON TABLE - FIXED!
+========================================
+
+✅ ISSUE FIXED:
+---------------
+Tables were displaying with extra blank lines
+between rows instead of clean side-by-side view
+
+✅ ROOT CAUSE:
+--------------
+Multi-line HTML template strings with indentation
+were introducing extra whitespace into the HTML
+
+✅ SOLUTION:
+------------
+Converted all table row generation to single-line
+strings, removing unnecessary whitespace
+
+✅ TABLES FIXED:
+----------------
+1. Archive Comparison Table (Archive vs Archive)
+2. Naming Convention Table (Folder vs Folder)
+3. Size Mismatch Table (Size comparison)
+
+========================================
+VISUAL IMPROVEMENT:
+========================================
+
+BEFORE (Broken):
+----------------
+┌────────────────────────────┐
+│ file1.jar │ ✓ │ file1.jar │
+│                            │ ← Extra blank line
+│ file2.war │ X │           │
+│                            │ ← Extra blank line
+└────────────────────────────┘
+
+AFTER (Fixed):
+--------------
+┌────────────────────────────┐
+│ file1.jar │ ✓ │ file1.jar │
+│ file2.war │ X │           │
+│ file3.ear │ ✓ │ file3.ear │
+└────────────────────────────┘
+
+Clean, compact, professional!
+
+========================================
+HOW TO TEST:
+========================================
+
+1. START SERVER:
+   py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+
+2. RUN ANY COMPARISON:
+   - Archive contents
+   - Naming convention
+   - Regular folder comparison
+
+3. CHECK HTML REPORT:
+   - Go to "📊 Detailed Comparison Table"
+   - Verify clean side-by-side display
+   - No extra blank lines!
+
+========================================
+BENEFITS:
+========================================
+
+✅ Clean Display - No gaps between rows
+✅ Better Readability - Compact format
+✅ Professional Look - Proper alignment
+✅ Faster Scanning - Easy to compare
+✅ Less Scrolling - More data visible
+
+========================================
+TECHNICAL:
+========================================
+
+Changed from:
+html_content += f"""
+    <tr>
+        <td>...</td>
+    </tr>"""
+
+To:
+html_content += f'<tr><td>...</td></tr>'
+
+Result: Clean HTML, proper rendering!
+
+========================================
+STATUS: ✅ FIXED!
+========================================
+
+All comparison tables now display perfectly
+with proper side-by-side formatting!
+

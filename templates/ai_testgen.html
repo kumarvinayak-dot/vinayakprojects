@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agentic AI Test-Case Generator</title>
+    <style>
+      :root { --accent:#059669; --accent2:#3b82f6; --bg:#f6f7fb; --bg2:#ecfdf5; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #059669 0%, #10b981 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .card-green { background:#f0fdf4; border:1px solid #059669; }
+      .card-blue { background:#eff6ff; border:1px solid #3b82f6; }
+      input[type="text"] { width:100%; padding:10px 12px; border-radius:8px; background:#fff; font-size:14px; border:1px solid #059669; box-sizing:border-box; }
+      .label-green { display:block; font-weight:600; margin-bottom:8px; color:#065f46; }
+      .btn-green { background:linear-gradient(90deg, #059669 0%, #10b981 100%); color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition: transform 0.1s, filter 0.15s; }
+      button:hover { filter: brightness(1.05); }
+      button:active { transform: translateY(1px); }
+      small { color: var(--muted); }
+      pre { white-space: pre-wrap; word-wrap: break-word; font-family: ui-monospace, monospace; font-size:13px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border); }
+      .score-badge { display:inline-block; padding:6px 14px; border-radius:20px; font-weight:700; color:#fff; background:#059669; }
+      .spinner { display:none; margin-top:12px; color:#059669; font-weight:600; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>🤖 Agentic AI Test-Case Generator</h2>
+        <a href="/" style="color:#fff;">← Back to Tools</a>
+      </div>
+
+      <div class="card card-green">
+        <p><strong>RAG + LangGraph + DeepEval pipeline.</strong> Enter a requirement area
+        (e.g. "order cancellation", "proration billing", "provisioning failure"). The system
+        retrieves relevant requirements, generates test cases with an agentic
+        generate→validate→refine loop, and scores them.</p>
+
+        <label class="label-green" for="query">Requirement area to generate test cases for:</label>
+        <input type="text" id="query" placeholder="e.g. order cancellation" value="order cancellation" />
+        <br/><br/>
+        <button class="btn-green" onclick="generate()">Generate Agentic Test Cases</button>
+        <div class="spinner" id="spinner">⏳ Running RAG retrieval → LangGraph agent loop → scoring... (may take 20-30s)</div>
+      </div>
+
+      <div id="results" style="display:none;">
+        <div class="card">
+          <h3>📊 Validation Score
+            <span class="score-badge" id="score">-</span>
+            <small id="attempts"></small>
+          </h3>
+          <p><small id="feedback"></small></p>
+        </div>
+
+        <div class="card card-blue">
+          <h3>✅ Generated Test Cases</h3>
+          <pre id="testcases"></pre>
+        </div>
+
+        <div class="card">
+          <h3>📄 Retrieved Requirements Context <small>(what RAG grounded the generation in)</small></h3>
+          <pre id="context"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function generate() {
+        const query = document.getElementById('query').value.trim();
+        if (!query) { alert('Please enter a requirement area.'); return; }
+        document.getElementById('spinner').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        try {
+          const resp = await fetch('/ai-testgen/run', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({query: query})
+          });
+          const data = await resp.json();
+          document.getElementById('spinner').style.display = 'none';
+          if (data.error) { alert('Error: ' + data.error); return; }
+          document.getElementById('score').textContent = data.score + '/10';
+          document.getElementById('attempts').textContent = ' (after ' + data.attempts + ' attempt(s))';
+          document.getElementById('feedback').textContent = data.feedback || '';
+          document.getElementById('testcases').textContent = data.test_cases;
+          document.getElementById('context').textContent = data.context;
+          document.getElementById('results').style.display = 'block';
+        } catch (e) {
+          document.getElementById('spinner').style.display = 'none';
+          alert('Request failed: ' + e);
+        }
+      }
+    </script>
+  </body>
+</html>

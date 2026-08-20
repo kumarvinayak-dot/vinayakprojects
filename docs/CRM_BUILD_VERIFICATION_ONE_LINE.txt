@@ -1,0 +1,53 @@
+CRM Build Verification — JAR Manifest Version & Class Diff (one line per step)
+
+================================================================================
+
+ILLUSTRATED RUNBOOK (screenshots embedded — open from any folder)
+
+  Double-click or open in browser:  CRM_BUILD_VERIFICATION_RUNBOOK.html
+
+  Location in Comparison Tool ZIP:    docs\CRM_BUILD_VERIFICATION_RUNBOOK.html
+
+  Screenshots are built into the HTML file (no separate image folder needed).
+
+  Regenerate (developers):  python scripts\build_crm_build_verification_runbook_html.py
+
+================================================================================
+
+EXAMPLE BUILDS (adjust for your release)
+
+  Old: \\dvciisilon02\cm_share2\v10.24.1\v10.24.1_67\SDK\Output\SDK_CRM_10.24.1.0_linux64_20260508_1421.jar
+  New: \\dvciisilon02\cm_share2\v10.24.1\v10.24.1_68\SDK\Output\SDK_CRM_10.24.1.0_linux64_20260608_0939.jar
+  URL: http://localhost:5000/crm
+
+================================================================================
+
+ONE-LINE STEPS
+
+ 1. Start the comparison tool (launch_comparison_tool.bat or start_server.bat) and open http://localhost:5000/crm.
+
+ 2. Check Build Comparison on the home page.
+
+ 3. Select CRM/AMSS only (do not select ASCF, UXF/OMNI, or DEX).
+
+ 4. Enter the previous CRM SDK path in Old build and the new CRM SDK path in New build.
+
+ 5. In JAR names for manifest diff (comma-separated), enter JAR names or patterns (e.g. AmdocsSecurityManager.jar, scala*.jar) to verify MANIFEST.MF Implementation-Version between old and new builds.
+
+ 6. In JAR names for class diff (comma-separated), enter JAR names (e.g. ClfyBillingManager.jar, ClfyCore.jar) to compare decompiled Java/class changes in the report.
+
+ 7. Leave Full content comparison as the default CRM mode.
+
+ 8. Click Run comparison and wait for the HTML report to open (enable pop-ups if blocked).
+
+ 9. In the report, review the JAR manifest diff (optional) — summary table for old vs new Implementation-Version per JAR and path.
+
+10. In the report, review the JAR class file diff (optional) — summary section and Perforce-style Java source differences for the JARs you listed.
+
+11. Confirm manifest versions and class changes match expected build verification results before sign-off.
+
+================================================================================
+
+Related: docs\CRM_AUTOMATION_RUNBOOK.html (full CRM automation with environment validation)
+
+================================================================================

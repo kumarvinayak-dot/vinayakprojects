@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 6 — Select CRM/AMSS</title>
+  <style>
+    body { font-family: Segoe UI, system-ui, sans-serif; margin: 0; background: #f1f5f9; padding: 20px; }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px; max-width: 920px; margin: 0 auto; }
+    h3 { margin: 0 0 12px; color: #1e3a8a; }
+    .options label { display: inline-flex; align-items: center; gap: 8px; margin-right: 20px; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+    .options label.sel { border-color: #0369a1; background: #eff6ff; font-weight: 700; }
+    .hint { font-size: 13px; color: #64748b; margin-top: 12px; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 6</div>
+    <h3>Application (select one)</h3>
+    <div class="options">
+      <label><input type="checkbox" /> ASCF</label>
+      <label class="sel"><input type="checkbox" checked /> CRM/AMSS</label>
+      <label><input type="checkbox" /> UXF/OMNI</label>
+      <label><input type="checkbox" /> DEX</label>
+    </div>
+    <p class="hint">Select <strong>CRM/AMSS</strong> only — do not select ASCF, UXF/OMNI, or DEX.</p>
+  </div>
+</body>
+</html>

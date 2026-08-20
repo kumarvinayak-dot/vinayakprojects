@@ -1,0 +1,58 @@
+═══════════════════════════════════════════════════════════════════════════
+✅ ONE COMMAND START - INTEGRATED AUTO-RESTART
+═══════════════════════════════════════════════════════════════════════════
+
+The server now has built-in auto-restart logic!
+No need for separate cleanup commands anymore.
+
+═══════════════════════════════════════════════════════════════════════════
+🚀 JUST RUN ONE COMMAND
+═══════════════════════════════════════════════════════════════════════════
+
+For localhost (default):
+> start_web_gui.bat
+
+For network access:
+> restart_server.bat
+
+OR custom:
+> py builtin_server.py --host YOUR_IP --port YOUR_PORT --skip-demos
+
+═══════════════════════════════════════════════════════════════════════════
+✨ WHAT HAPPENS AUTOMATICALLY
+═══════════════════════════════════════════════════════════════════════════
+
+1. ✓ Finds any running builtin_server.py instances
+2. ✓ Stops them gracefully
+3. ✓ Waits for cleanup
+4. ✓ Starts fresh server
+5. ✓ Shows you the URL to access
+
+ALL IN ONE COMMAND!
+
+═══════════════════════════════════════════════════════════════════════════
+📋 SETUP (ONE TIME)
+═══════════════════════════════════════════════════════════════════════════
+
+Install psutil for auto-cleanup:
+> pip install psutil
+
+OR install all requirements:
+> pip install -r requirements.txt
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 YOUR USE CASE
+═══════════════════════════════════════════════════════════════════════════
+
+To start on 10.19.164.180:8080, just run:
+
+> restart_server.bat
+
+OR
+
+> py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+
+That's it! No more manual process killing! 🎉
+
+═══════════════════════════════════════════════════════════════════════════
+

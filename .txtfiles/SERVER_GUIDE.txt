@@ -1,0 +1,625 @@
+# ASCF Comparison Tool - Server Administration Guide
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Server Architecture](#2-server-architecture)
+3. [Understanding Access URLs](#3-understanding-access-urls)
+4. [Multi-User Support](#4-multi-user-support)
+5. [Network IP Configuration](#5-network-ip-configuration)
+6. [Server Management Scripts](#6-server-management-scripts)
+7. [Starting the Server](#7-starting-the-server)
+8. [Stopping the Server](#8-stopping-the-server)
+9. [Checking Server Status](#9-checking-server-status)
+10. [Command Line Options](#10-command-line-options)
+11. [Troubleshooting Guide](#11-troubleshooting-guide)
+12. [Quick Reference Card](#12-quick-reference-card)
+
+---
+
+## 1. Overview
+
+The ASCF Comparison Tool is a web-based application for comparing software builds, patches, and archive files. It runs as a single Python HTTP server that provides both the web interface and backend processing capabilities.
+
+### Key Features:
+- Compare folders and archive contents
+- Naming convention analysis
+- JAR/WAR/EAR deep inspection
+- File copy operations with progress tracking
+- Multi-user session support
+- Network accessibility for team collaboration
+
+---
+
+## 2. Server Architecture
+
+### Single Server Design
+
+The application uses a **single integrated server** (`builtin_server.py`) that handles everything:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        builtin_server.py                            │
+│                    (Python ThreadingHTTPServer)                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐ │
+│  │    Web UI       │  │    Backend      │  │  Session Manager    │ │
+│  │                 │  │                 │  │                     │ │
+│  │  - HTML Pages   │  │  - Comparisons  │  │  - User Sessions    │ │
+│  │  - JavaScript   │  │  - File Copy    │  │  - Progress Track   │ │
+│  │  - CSS Styles   │  │  - Reports      │  │  - Console Logs     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Important: There is Only ONE Server
+
+Unlike traditional web applications that may have separate frontend and backend servers, this tool combines everything into a single Python process. This simplifies deployment and management.
+
+### Server Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Main UI page |
+| `/run` | GET | Start a comparison |
+| `/progress` | GET | Get comparison progress |
+| `/logs` | GET | Get comparison console logs |
+| `/copy_async` | POST | Start async copy operation |
+| `/copy_logs` | GET | Get copy operation logs |
+| `/copy_progress` | GET | Get copy progress |
+| `/reports` | GET | List saved reports |
+| `/stop` | POST | Stop running operation |
+| `/debug_sessions` | GET | Debug: list all sessions |
+
+---
+
+## 3. Understanding Access URLs
+
+When you start the server, you'll see output like this:
+
+```
+======================================================================
+ASCF Comparison Server
+======================================================================
+
+Checking for existing server instances...
+  -> Auto-cleanup disabled (to enable: pip install psutil)
+
+Starting server on 0.0.0.0:5000...
+[OK] Built-in server running at http://0.0.0.0:5000
+[OK] Accessible on the network at: http://10.78.39.213:5000
+
+Press Ctrl+C to stop the server
+```
+
+### What Does Each URL Mean?
+
+#### `http://0.0.0.0:5000`
+- `0.0.0.0` is a special address meaning "all network interfaces"
+- The server listens on ALL available network adapters
+- This enables both local and network access
+
+#### `http://localhost:5000` or `http://127.0.0.1:5000`
+- These are **local-only** addresses
+- Use these when accessing from the same computer where the server runs
+- Most reliable for personal use
+
+#### `http://10.78.39.213:5000` (Network IP)
+- This is your computer's IP address on the local network
+- Other users on the **same network** can use this URL
+- Share this with colleagues for collaborative access
+
+### Access URL Summary
+
+| User | Which URL to Use |
+|------|------------------|
+| You (on server computer) | `http://localhost:5000` |
+| Colleague on same network | `http://10.78.39.213:5000` (use your actual IP) |
+| Remote user (different network) | Requires VPN or port forwarding |
+
+---
+
+## 4. Multi-User Support
+
+The server supports multiple simultaneous users through session-based tracking.
+
+### How Sessions Work
+
+```
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│     User A       │   │     User B       │   │     User C       │
+│  (Your Browser)  │   │ (Colleague #1)   │   │ (Colleague #2)   │
+└────────┬─────────┘   └────────┬─────────┘   └────────┬─────────┘
+         │                      │                      │
+         │ Session: abc123      │ Session: def456      │ Session: ghi789
+         │                      │                      │
+         └──────────────────────┼──────────────────────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │   builtin_server.py   │
+                    │      Port 5000        │
+                    │                       │
+                    │  Session Storage:     │
+                    │   abc123 → User A     │
+                    │   def456 → User B     │
+                    │   ghi789 → User C     │
+                    └───────────────────────┘
+```
+
+### Session Features
+
+1. **Isolation**: Each user's comparison runs independently
+2. **Progress Tracking**: Each user sees only their own progress
+3. **Console Logs**: Logs are separated by session
+4. **No Interference**: Users don't affect each other's operations
+
+### Session Storage
+
+- Sessions are stored in browser's `sessionStorage`
+- Each browser tab gets a unique session ID
+- Sessions expire after 1 hour of inactivity
+- Closing the tab clears the session
+
+---
+
+## 5. Network IP Configuration
+
+### Why Does the Network IP Change?
+
+Your network IP address can change due to several reasons:
+
+| Reason | Explanation |
+|--------|-------------|
+| **DHCP Lease Renewal** | Corporate networks assign IPs dynamically. When the lease expires (typically 8-24 hours), you may receive a new IP |
+| **VPN Connection** | Connecting/disconnecting from VPN changes your network interface |
+| **Network Switch** | Moving from wired (Ethernet) to wireless (WiFi) assigns different IPs |
+| **Computer Restart** | After restarting, DHCP may assign a different IP |
+| **Multiple Adapters** | If you have multiple network adapters, the displayed IP depends on which is active |
+
+### How to Find Your Current IP
+
+#### Method 1: Command Prompt
+```cmd
+ipconfig | findstr "IPv4"
+```
+
+#### Method 2: PowerShell
+```powershell
+Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notmatch '^127\.' }
+```
+
+#### Method 3: Use the Status Script
+```cmd
+CHECK_STATUS.bat
+```
+
+### Sharing IP with Colleagues
+
+When your IP changes:
+1. Find your new IP using one of the methods above
+2. Share the new URL: `http://YOUR_NEW_IP:5000`
+3. Colleagues update their bookmarks
+
+### Getting a Static IP (Optional)
+
+Contact your IT department to request a static IP if you frequently share the tool with others. This prevents the IP from changing.
+
+---
+
+## 6. Server Management Scripts
+
+The following scripts are provided for easy server management:
+
+### Batch Files (Double-click to run)
+
+| File | Description |
+|------|-------------|
+| `START_SERVER.bat` | Starts the server (stops existing processes first) |
+| `STOP_SERVER.bat` | Stops the server running on port 5000 |
+| `CHECK_STATUS.bat` | Checks server status and displays network IPs |
+| `SERVER_MANAGER.bat` | Opens interactive management menu |
+
+### PowerShell Scripts (Advanced features)
+
+| File | Description |
+|------|-------------|
+| `start_server.ps1` | Start server with detailed output and options |
+| `stop_server.ps1` | Stop server with multiple modes |
+| `server_status.ps1` | Comprehensive status information |
+| `server_manager.ps1` | Full-featured interactive menu |
+
+### Interactive Server Manager
+
+Run `SERVER_MANAGER.bat` for an interactive menu:
+
+```
+============================================================
+     ASCF Comparison Tool - Server Manager                  
+============================================================
+
+  Project: C:\PythonProject_UPDATED\python_project
+  Port:    5000
+
+  Status:  [RUNNING]
+
+------------------------------------------------------------
+
+  [1] Start Server
+  [2] Stop Server (port 5000 only)
+  [3] Stop ALL Python processes
+  [4] Restart Server
+  [5] Check Status (detailed)
+  [6] Open in Browser
+  [7] Show Network IPs
+
+  [Q] Quit
+
+------------------------------------------------------------
+
+Enter your choice:
+```
+
+---
+
+## 7. Starting the Server
+
+### Method 1: Double-Click (Easiest)
+
+1. Navigate to `C:\PythonProject_UPDATED\python_project`
+2. Double-click `START_SERVER.bat`
+3. Wait for the server to start
+4. Access via `http://localhost:5000`
+
+### Method 2: Interactive Menu
+
+1. Double-click `SERVER_MANAGER.bat`
+2. Press `1` to start server
+3. Press `Ctrl+C` to stop and return to menu
+
+### Method 3: PowerShell Script
+
+```powershell
+cd C:\PythonProject_UPDATED\python_project
+.\start_server.ps1
+```
+
+### Method 4: Direct Command
+
+```powershell
+cd C:\PythonProject_UPDATED\python_project
+$env:CFR_JAR = "C:\cfr-0.152.jar"
+python builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+```
+
+### Method 5: One-Liner (Clean Start)
+
+```powershell
+Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; cd C:\PythonProject_UPDATED\python_project; python builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+```
+
+### Startup Checklist
+
+- [ ] No other process is using port 5000
+- [ ] Python is installed and in PATH
+- [ ] You're in the correct directory
+- [ ] CFR_JAR environment variable is set (for Java decompilation)
+
+---
+
+## 8. Stopping the Server
+
+### Method 1: Keyboard Interrupt (If server is in foreground)
+
+Press `Ctrl+C` in the terminal where the server is running.
+
+### Method 2: Double-Click Stop Script
+
+Double-click `STOP_SERVER.bat`
+
+### Method 3: Interactive Menu
+
+1. Run `SERVER_MANAGER.bat`
+2. Press `2` (Stop port 5000) or `3` (Stop ALL Python)
+
+### Method 4: PowerShell Script
+
+```powershell
+.\stop_server.ps1
+```
+
+Or to stop all Python processes:
+
+```powershell
+.\stop_server.ps1 -KillAllPython
+```
+
+### Method 5: Manual Process Kill
+
+```powershell
+# Find the process ID
+netstat -ano | findstr ":5000"
+
+# Output example:
+# TCP    0.0.0.0:5000    0.0.0.0:0    LISTENING    12345
+
+# Kill by PID
+taskkill /F /PID 12345
+```
+
+### Method 6: Kill All Python (Nuclear Option)
+
+```powershell
+taskkill /F /IM python.exe
+```
+
+Or in PowerShell:
+
+```powershell
+Get-Process python | Stop-Process -Force
+```
+
+---
+
+## 9. Checking Server Status
+
+### Method 1: Status Script
+
+Double-click `CHECK_STATUS.bat` or run:
+
+```powershell
+.\server_status.ps1
+```
+
+### Method 2: Quick Port Check
+
+```powershell
+netstat -ano | findstr ":5000"
+```
+
+**Output interpretation:**
+
+```
+TCP    0.0.0.0:5000    0.0.0.0:0    LISTENING    12345
+       ↑               ↑            ↑            ↑
+       Address         State        Status       PID
+```
+
+- If you see `LISTENING`, the server is running
+- The last number is the Process ID (PID)
+
+### Method 3: Browser Test
+
+Open `http://localhost:5000` in your browser:
+- If the page loads → Server is running
+- If "connection refused" → Server is not running
+
+### Understanding Multiple Processes
+
+If you see multiple processes on port 5000:
+
+```
+TCP    0.0.0.0:5000    0.0.0.0:0    LISTENING    12345
+TCP    0.0.0.0:5000    0.0.0.0:0    LISTENING    67890
+```
+
+This indicates a problem. Stop all processes and restart:
+
+```powershell
+# Kill all on port 5000
+taskkill /F /PID 12345
+taskkill /F /PID 67890
+
+# Or kill all Python
+Get-Process python | Stop-Process -Force
+
+# Wait and restart
+Start-Sleep 3
+python builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+```
+
+---
+
+## 10. Command Line Options
+
+```
+python builtin_server.py [OPTIONS]
+```
+
+### Available Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--host` | `127.0.0.1` | IP address to bind. Use `0.0.0.0` for network access |
+| `--port` | `5000` | Port number to listen on |
+| `--skip-demos` | Off | Skip running startup tests (faster startup) |
+
+### Examples
+
+```powershell
+# Local access only (safest, no network exposure)
+python builtin_server.py
+
+# Network accessible (required for multi-user)
+python builtin_server.py --host 0.0.0.0
+
+# Custom port
+python builtin_server.py --host 0.0.0.0 --port 8080
+
+# Fast startup (recommended for production)
+python builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+
+# Specific interface only
+python builtin_server.py --host 192.168.1.100 --port 5000
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `CFR_JAR` | Path to CFR decompiler JAR for Java class comparison |
+| `HOST` | Default host (overridden by --host) |
+| `PORT` | Default port (overridden by --port) |
+
+---
+
+## 11. Troubleshooting Guide
+
+### Problem: "Address already in use" Error
+
+**Cause:** Another process is using port 5000
+
+**Solution:**
+```powershell
+# Find and kill the process
+netstat -ano | findstr ":5000"
+taskkill /F /PID <PID_NUMBER>
+
+# Or use the stop script
+.\STOP_SERVER.bat
+```
+
+### Problem: Multiple Processes on Same Port
+
+**Cause:** Server was started multiple times without stopping
+
+**Solution:**
+```powershell
+# Kill all Python processes
+Get-Process python | Stop-Process -Force
+
+# Wait for cleanup
+Start-Sleep 3
+
+# Start fresh
+.\START_SERVER.bat
+```
+
+### Problem: "Python not found" Error
+
+**Cause:** Python is not in system PATH
+
+**Solution:**
+1. Install Python from python.org
+2. During installation, check "Add Python to PATH"
+3. Restart terminal after installation
+
+### Problem: Colleagues Can't Access the Server
+
+**Possible Causes and Solutions:**
+
+1. **Firewall blocking port 5000**
+   - Open Windows Firewall settings
+   - Add inbound rule for port 5000
+
+2. **Server bound to localhost only**
+   - Ensure using `--host 0.0.0.0`
+   
+3. **Different network**
+   - Both computers must be on the same network
+   - VPN may be required for remote access
+
+4. **IP address changed**
+   - Run `CHECK_STATUS.bat` to find new IP
+   - Share updated URL with colleagues
+
+### Problem: Server Crashes Silently
+
+**Solution:**
+Run the server in foreground to see errors:
+```powershell
+cd C:\PythonProject_UPDATED\python_project
+python builtin_server.py --host 0.0.0.0 --port 5000
+```
+
+Check for error messages in the output.
+
+### Problem: Console Logs Not Showing
+
+**For Comparison Operations:**
+- Use the "📋 Console Output" button in the header
+- Logs are session-specific; ensure you're viewing the correct session
+
+**For Copy Operations:**
+- Use the "📋 Copy Logs" button next to "Copy Build Folders"
+- This uses a dedicated endpoint for copy operation logs
+
+### Problem: Very Slow Performance
+
+**Possible Causes:**
+1. **Network path access:** Comparing network folders is slower
+2. **Large archives:** Deep scanning large JAR/WAR/EAR files takes time
+3. **Antivirus scanning:** May slow file operations
+
+**Solutions:**
+- Copy files to local disk before comparing
+- Use "Naming Convention" mode for faster comparisons
+- Add exclusions in antivirus for the project folder
+
+---
+
+## 12. Quick Reference Card
+
+### Start Server
+```
+Double-click: START_SERVER.bat
+     or
+PowerShell:   .\start_server.ps1
+     or
+Command:      python builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+```
+
+### Stop Server
+```
+Keyboard:     Ctrl+C (if running in foreground)
+     or
+Double-click: STOP_SERVER.bat
+     or
+PowerShell:   .\stop_server.ps1
+     or
+Command:      taskkill /F /PID <PID>
+```
+
+### Check Status
+```
+Double-click: CHECK_STATUS.bat
+     or
+PowerShell:   netstat -ano | findstr ":5000"
+```
+
+### Find Network IP
+```
+Command:      ipconfig | findstr "IPv4"
+     or
+Double-click: CHECK_STATUS.bat
+```
+
+### Interactive Management
+```
+Double-click: SERVER_MANAGER.bat
+```
+
+### Access URLs
+```
+Local:        http://localhost:5000
+Network:      http://<YOUR_IP>:5000
+```
+
+---
+
+## Document Information
+
+| Item | Value |
+|------|-------|
+| **Application** | ASCF Comparison Tool |
+| **Server File** | builtin_server.py |
+| **Default Port** | 5000 |
+| **Project Path** | C:\PythonProject_UPDATED\python_project |
+| **Document Version** | 1.0 |
+| **Last Updated** | December 2024 |
+
+---
+
+*For additional support, check the console output for error messages or contact the development team.*
+

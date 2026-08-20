@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 9 — Load CRM Base Paths</title>
+  <style>
+    body { font-family: Segoe UI, system-ui, sans-serif; margin: 0; background: #f1f5f9; padding: 16px; }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px; max-width: 960px; margin: 0 auto; }
+    h4 { margin: 0 0 10px; color: #0c4a6e; }
+    .btn { background: #0369a1; color: #fff; border: 0; padding: 10px 16px; border-radius: 8px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+    th { background: #eff6ff; }
+    tr.hl { background: #fef9c3; }
+    .act { color: #0369a1; font-weight: 600; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; }
+    code { font-size: 11px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 9 (optional)</div>
+    <h4>CRM &amp; AMSS version base paths</h4>
+    <button class="btn" type="button">Load CRM base paths</button>
+    <table>
+      <thead><tr><th>CRM version</th><th>Base path</th><th>Actions</th></tr></thead>
+      <tbody>
+        <tr><td>10.0.1</td><td><code>\\ntnet\indiafilestore1\cm_share\10.0.1\</code></td><td class="act">Use as Old · Use as New · Open in Explorer</td></tr>
+        <tr class="hl"><td>10.24.0</td><td><code>\\ntnet\indiafilestore1\cm_share\v10.24\</code></td><td class="act">Use as Old · Use as New · Open in Explorer</td></tr>
+        <tr><td>10.24.1</td><td><code>\\dvciisilon02\cm_share2\v10.24.1\</code></td><td class="act">Use as Old · Use as New · Open in Explorer</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13px;color:#64748b;margin-top:12px;">Use <strong>Use as Old</strong> / <strong>Use as New</strong> or paste full SDK JAR paths manually.</p>
+  </div>
+</body>
+</html>

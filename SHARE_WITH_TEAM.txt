@@ -1,0 +1,103 @@
+================================================================================
+  BUILD VERIFICATION & ENVIRONMENT VALIDATION TOOL
+  ASCF / CRM / AMSS / UXF / OMNI / DEX
+  Local setup for team members (each user runs on their own PC)
+================================================================================
+
+WHAT YOU GET
+  - Compare old vs new build paths from NAS (all applications)
+  - Environment validation (SSH) on Linux hosts
+  - HTML reports saved on your PC
+  - Full guide: INSTALL_INSTRUCTIONS.html (in the ZIP)
+
+--------------------------------------------------------------------------------
+WHAT TO INSTALL
+--------------------------------------------------------------------------------
+  Your team lead shares:  Comparison Tool.zip
+
+  1. Extract Comparison Tool.zip anywhere (e.g. C:\Comparison Tool\)
+  2. Open the extracted "Comparison Tool" folder
+  3. Double-click INSTALL.cmd  (one time, 5-15 minutes)
+  4. Double-click launch_comparison_tool.bat  (every day)
+
+--------------------------------------------------------------------------------
+REQUIREMENTS
+--------------------------------------------------------------------------------
+  Windows 10/11 (64-bit)
+  Python 3.10+  -> https://www.python.org/downloads/
+                 (check "Add Python to PATH" during install)
+  ~50 GB free on C: drive (large comparisons copy files locally)
+  Read access to corporate NAS paths (e.g. \\ntnet\..., \\raaisilon\...)
+  Chrome or Edge browser
+
+--------------------------------------------------------------------------------
+START / STOP (every day)
+--------------------------------------------------------------------------------
+  START  -> double-click  launch_comparison_tool.bat  (or start_server.bat)
+  OPEN   -> http://localhost:5000/crm   (browser may open automatically)
+  STOP   -> double-click  STOP_SERVER.bat
+  STATUS -> double-click  CHECK_STATUS.bat
+
+  No password or access token needed for local use.
+
+--------------------------------------------------------------------------------
+RUN COMPARISONS — ALL APPLICATIONS
+--------------------------------------------------------------------------------
+  Single URL for everything:  http://localhost:5000/crm
+
+  1. Open http://localhost:5000/crm
+  2. Enable "Build Comparison"
+  3. Select ONE application:
+       [ ] ASCF          — full / naming / archives / FOSS
+       [ ] CRM/AMSS      — full compare, ClfyAgent, Nexus verification
+       [ ] UXF/OMNI      — full folder compare
+       [ ] DEX           — Nexus artifact compare (version fields)
+  4. Enter Old build path and New build path (UNC NAS paths)
+     OR use "Load ... base paths" for CRM, AMSS, ASCF, UXF, or OMNI
+  5. Set application-specific options (shown when you select an app)
+  6. Click Run comparison
+  7. View HTML report when done; use "Console Output" for live logs
+
+  Environment Validation (same page): SSH to Linux host to verify deployment.
+
+  Reports on your PC:  \\YOUR-PC-NAME\c$\crm_compare_reports
+  Temp during compare: \\YOUR-PC-NAME\c$\crm_compare_temp
+
+--------------------------------------------------------------------------------
+OPTIONAL
+--------------------------------------------------------------------------------
+  HTTPS (self-signed):
+    powershell -ExecutionPolicy Bypass -File scripts\generate_https_cert.ps1
+    Then use https://localhost:5443/crm
+
+  Java source diffs (CRM):
+    Place cfr-0.152.jar at C:\cfr-0.152.jar
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+  Python not found        -> Reinstall Python with "Add to PATH"; run INSTALL.cmd
+  .venv missing           -> Run INSTALL.cmd again in the extracted folder
+  Port 5000 in use        -> Run STOP_SERVER.bat, then start again
+  NAS path access denied  -> Open same path in Explorer; check VPN/network
+  Slow comparison         -> Normal for large builds; keep C: space free
+  pip install fails       -> Ask team lead for offline wheels (LOCAL_USER_SETUP.md)
+
+--------------------------------------------------------------------------------
+DO NOT USE (server deployment only - not for local laptops)
+--------------------------------------------------------------------------------
+  INSTALL_PERSISTENT_SERVER.bat
+  start_server_lan.bat
+  .env / CRM_API_TOKEN
+
+--------------------------------------------------------------------------------
+FULL DOCUMENTATION (inside the ZIP)
+--------------------------------------------------------------------------------
+  INSTALL_INSTRUCTIONS.html   — open in browser (recommended)
+  INSTALL_INSTRUCTIONS.md     — same content, markdown
+  LOCAL_USER_SETUP.md         — quick reference
+
+================================================================================
+  Questions? Contact your team lead. Share report HTML + console logs (not
+  passwords) when reporting issues.
+================================================================================

@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foundations Link - Results</title>
+    <style>
+      :root { --accent:#059669; --accent2:#3b82f6; --bg:#f6f7fb; --bg2:#ecfdf5; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #059669 0%, #10b981 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      .header-blue { background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .success-card { background:#f0fdf4; border:1px solid #059669; }
+      .success-card-blue { background:#eff6ff; border:1px solid #3b82f6; }
+      .error-card { background:#fef2f2; border:1px solid #fecaca; }
+      .warning-card { background:#fefce8; border:1px solid #f59e0b; }
+      table { width:100%; border-collapse:collapse; margin:15px 0; }
+      table tr { border-bottom:1px solid #d1fae5; }
+      table.blue tr { border-bottom:1px solid #bfdbfe; }
+      table td { padding:8px 0; }
+      table td:first-child { font-weight:600; color:#065f46; width:180px; }
+      table.blue td:first-child { color:#1e40af; }
+      .path-box { background:#dcfce7; padding:12px; border-radius:6px; margin-top:15px; }
+      .path-box.blue { background:#dbeafe; }
+      .path-box.error { background:#fee2e2; }
+      .path-box.warning { background:#fef3c7; }
+      .updates-box { background:#d1fae5; padding:12px; border-radius:6px; margin-top:15px; }
+      .updates-box.blue { background:#bfdbfe; }
+      .mono { font-family:monospace; font-size:12px; word-break:break-all; }
+      small { color: var(--muted); }
+      .back { color:#fff; }
+      ul.updates { margin:0; padding-left:20px; }
+      ul.updates li { margin:5px 0; font-family:monospace; font-size:12px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header {% if result.action == 'update' %}header-blue{% endif %}">
+        <h2>Foundations Link - Results</h2>
+        <a class="back" href="{{ url_for('foundations') }}">← Back</a>
+      </div>
+      
+      {% if result.error %}
+      <div class="card error-card">
+        <h3 style="margin-top:0; color:#dc2626;">❌ Error</h3>
+        <p>Could not {{ 'update' if result.action == 'update' else 'create' }} the foundation link file.</p>
+        <div class="path-box error">
+          <p style="margin:0;" class="mono">{{ result.error }}</p>
+        </div>
+        <p style="margin-top:15px;"><a href="{{ url_for('foundations') }}">← Go back and try again</a></p>
+      </div>
+      
+      {% elif result.warning %}
+      <div class="card warning-card">
+        <h3 style="margin-top:0; color:#d97706;">⚠️ Warning</h3>
+        <p>{{ result.warning }}</p>
+        <table>
+          <tr>
+            <td>ASCF Version:</td>
+            <td>{{ result.ascf_version }}</td>
+          </tr>
+          <tr>
+            <td>HF Number:</td>
+            <td>{{ result.hf_number }}</td>
+          </tr>
+          {% if result.action == 'prepare' %}
+          <tr>
+            <td>Existing File:</td>
+            <td class="mono">{{ result.dest_filename }}</td>
+          </tr>
+          {% elif result.action == 'update' %}
+          <tr>
+            <td>File:</td>
+            <td class="mono">{{ result.filename }}</td>
+          </tr>
+          {% endif %}
+        </table>
+        {% if result.action == 'prepare' %}
+        <div class="path-box warning">
+          <p style="margin:0; font-size:13px;"><strong>Full Path:</strong></p>
+          <p style="margin:5px 0 0 0;" class="mono">{{ result.dest_path }}</p>
+        </div>
+        <p style="margin-top:15px;">Delete the existing file first if you want to recreate it.</p>
+        {% endif %}
+        <p><a href="{{ url_for('foundations') }}">← Go back</a></p>
+      </div>
+      
+      {% elif result.success and result.action == 'prepare' %}
+      <div class="card success-card">
+        <h3 style="margin-top:0; color:#059669;">✅ Foundation Link Prepared Successfully</h3>
+        <table>
+          <tr>
+            <td>ASCF Version:</td>
+            <td>{{ result.ascf_version }}</td>
+          </tr>
+          <tr>
+            <td>HF Number:</td>
+            <td>{{ result.hf_number }}</td>
+          </tr>
+          <tr>
+            <td>Source File:</td>
+            <td class="mono">{{ result.source_filename }}</td>
+          </tr>
+          <tr style="border-bottom:none;">
+            <td>Created File:</td>
+            <td class="mono">{{ result.dest_filename }}</td>
+          </tr>
+        </table>
+        <div class="path-box">
+          <p style="margin:0; font-size:13px;"><strong>Full Path:</strong></p>
+          <p style="margin:5px 0 0 0;" class="mono">{{ result.dest_path }}</p>
+        </div>
+        <p style="margin-top:15px;"><a href="{{ url_for('foundations') }}">← Back to Foundations (proceed to Step 2: Update)</a></p>
+      </div>
+      
+      {% elif result.success and result.action == 'update' and result.no_changes %}
+      <div class="card success-card-blue">
+        <h3 style="margin-top:0; color:#1d4ed8;">ℹ️ No Changes Required</h3>
+        <p>The file already contains the values you specified:</p>
+        <table class="blue">
+          <tr>
+            <td>ASCF Version:</td>
+            <td>{{ result.ascf_version }}</td>
+          </tr>
+          <tr>
+            <td>HF Number:</td>
+            <td>{{ result.hf_number }}</td>
+          </tr>
+          <tr>
+            <td>Month/Year:</td>
+            <td>{{ result.month }} {{ result.year }}</td>
+          </tr>
+          <tr>
+            <td>Creation Date:</td>
+            <td>{{ result.creation_date }}</td>
+          </tr>
+          <tr style="border-bottom:none;">
+            <td>File:</td>
+            <td class="mono">{{ result.filename }}</td>
+          </tr>
+        </table>
+        <div class="path-box blue">
+          <p style="margin:0; font-size:13px;"><strong>Full Path:</strong></p>
+          <p style="margin:5px 0 0 0;" class="mono">{{ result.file_path }}</p>
+        </div>
+        <p style="color:#6b7280; margin-top:15px;">If you want to update to different values, enter the new values in the form and submit again.</p>
+        <p style="margin-top:15px;"><a href="{{ url_for('foundations') }}">← Back to Foundations</a></p>
+      </div>
+      
+      {% elif result.success and result.action == 'update' %}
+      <div class="card success-card-blue">
+        <h3 style="margin-top:0; color:#1d4ed8;">✅ Foundation Link Updated Successfully</h3>
+        <table class="blue">
+          <tr>
+            <td>ASCF Version:</td>
+            <td>{{ result.ascf_version }}</td>
+          </tr>
+          <tr>
+            <td>HF Number:</td>
+            <td>{{ result.hf_number }}</td>
+          </tr>
+          <tr>
+            <td>Month/Year:</td>
+            <td>{{ result.month }} {{ result.year }}</td>
+          </tr>
+          <tr>
+            <td>Creation Date:</td>
+            <td>{{ result.creation_date }}</td>
+          </tr>
+          <tr style="border-bottom:none;">
+            <td>Updated File:</td>
+            <td class="mono">{{ result.filename }}</td>
+          </tr>
+        </table>
+        <div class="updates-box blue">
+          <p style="margin:0 0 10px 0; font-weight:600; color:#1e40af;">Updates Made ({{ result.updates_made|length }}):</p>
+          <ul class="updates">
+            {% for update in result.updates_made %}
+            <li>{{ update }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="path-box blue">
+          <p style="margin:0; font-size:13px;"><strong>Full Path:</strong></p>
+          <p style="margin:5px 0 0 0;" class="mono">{{ result.file_path }}</p>
+        </div>
+        <p style="margin-top:15px;"><a href="{{ url_for('foundations') }}">← Back to Foundations</a></p>
+      </div>
+      
+      {% else %}
+      <div class="card error-card">
+        <h3 style="margin-top:0; color:#dc2626;">❌ Unknown Error</h3>
+        <p>Something went wrong. Please try again.</p>
+        <p><a href="{{ url_for('foundations') }}">← Go back</a></p>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

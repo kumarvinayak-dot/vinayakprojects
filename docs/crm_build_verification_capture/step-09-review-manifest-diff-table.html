@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 9 — Review JAR manifest diff table</title>
+  <style>
+    body { font-family: Segoe UI, system-ui, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+    .header { background: linear-gradient(90deg,#1e3a8a,#2563eb); color: #fff; padding: 18px 22px; }
+    .wrap { max-width: 1100px; margin: 16px auto; padding: 0 16px 24px; }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: linear-gradient(135deg,#1e3a5f,#2d5a87); color: #fff; }
+    .changed { background: #fef3c7; font-weight: 600; }
+    code { font-size: 11px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="margin:0;font-size:20px;">CRM Full Comparison Report</h1>
+    <p style="margin:6px 0 0;opacity:.95;">v10.24.1_67 → v10.24.1_68</p>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="step">Step 9</div>
+      <h2 style="margin:0 0 8px;font-size:16px;">📋 JAR manifest diff (optional) — summary</h2>
+      <p style="font-size:12px;color:#64748b;margin:0 0 10px;">Verify old vs new <strong>MANIFEST.MF Implementation-Version</strong> and JAR paths match expectations.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>JAR name / query</th>
+            <th>Impl-Version (old)</th>
+            <th>Impl-Version (new)</th>
+            <th>Primary JAR path (old)</th>
+            <th>Primary JAR path (new)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>AmdocsSecurityManager.jar</td>
+            <td>10.24.1.0.52</td>
+            <td class="changed">10.24.1.0.68</td>
+            <td><code>.../modules/crm/lib/AmdocsSecurityManager.jar</code></td>
+            <td><code>.../modules/crm/lib/AmdocsSecurityManager.jar</code></td>
+          </tr>
+          <tr>
+            <td>scala-library*.jar</td>
+            <td>2.13.8</td>
+            <td>2.13.8</td>
+            <td><code>.../sharedlib/scala-library-2.13.8.jar</code></td>
+            <td><code>.../sharedlib/scala-library-2.13.8.jar</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

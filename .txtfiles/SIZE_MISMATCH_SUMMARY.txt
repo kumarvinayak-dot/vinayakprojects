@@ -1,0 +1,79 @@
+========================================
+SIZE MISMATCH FEATURE - QUICK SUMMARY
+========================================
+
+WHAT'S NEW:
+-----------
+✓ New "Size Mismatches" section in archive comparison HTML reports
+✓ Shows files with different sizes between Archive 1 and Archive 2
+✓ Professional table format with formatted sizes (B, KB, MB, GB)
+✓ Calculates differences and percentage changes
+✓ Navigation hyperlink for quick access
+
+FEATURES:
+---------
+1. Navigation Link
+   - Shows in Quick Navigation menu
+   - Example: "📏 Size Mismatches (45)"
+   - Click to jump directly to the section
+
+2. Detailed Table Display
+   - File name
+   - Size in Archive 1 (right-aligned, monospace)
+   - Size in Archive 2 (right-aligned, monospace)
+   - Difference row showing:
+     * Absolute difference
+     * Percentage change
+     * Direction (+/-)
+
+3. Smart Size Formatting
+   - Bytes: "1234 B"
+   - Kilobytes: "15.42 KB"
+   - Megabytes: "2.35 MB"
+   - Gigabytes: "1.05 GB"
+
+EXAMPLE OUTPUT:
+--------------
+📏 Size Mismatches (2 files)
+┌─────────────────────────────┬───────────────┬───────────────┐
+│ Service.class               │    15.42 KB   │    16.18 KB   │
+│         Difference: 775 B (+4.9%)                          │
+├─────────────────────────────┼───────────────┼───────────────┤
+│ dependency.jar              │    2.35 MB    │    2.41 MB    │
+│         Difference: 61.44 KB (+2.6%)                       │
+└─────────────────────────────┴───────────────┴───────────────┘
+
+HOW TO USE:
+-----------
+1. Start server: py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+2. Run Archive contents comparison
+3. Open HTML report
+4. Click "📏 Size Mismatches (X)" in navigation menu
+5. View detailed size comparison table
+
+USE CASES:
+----------
+• Version comparison (SDK HFB15 vs HFB14)
+• Build verification
+• Regression detection
+• Dependency analysis
+• Identify bloat or optimization opportunities
+
+TECHNICAL:
+----------
+File: builtin_server.py
+- Added size_mismatches dictionary to track differences
+- Enhanced archive member comparison loop
+- Added format_size() function for human-readable sizes
+- New HTML section with professional table layout
+
+FILES MODIFIED:
+--------------
+• builtin_server.py - Main implementation
+
+DEBUG OUTPUT:
+-------------
+Look for: [DEBUG] Final stats: ... size_mismatches=X
+
+STATUS: ✅ READY TO USE
+

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 10 — Repeat adoption checklist</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 0; background: #f0fdf4; padding: 20px; }
+    .card { background: #fff; border: 1px solid #86efac; border-radius: 12px; padding: 20px; max-width: 760px; margin: 0 auto; }
+    .step { color: #059669; font-weight: 700; margin-bottom: 8px; }
+    ul { margin: 12px 0 0; padding-left: 22px; line-height: 1.8; }
+    li.done { color: #059669; }
+    li.pending { color: #64748b; }
+    .note { margin-top: 14px; padding: 12px; background: #ecfdf5; border-radius: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 10</div>
+    <h2 style="margin:0 0 8px;">Foundation &amp; FOSS adoption checklist</h2>
+    <p style="margin:0;color:#64748b;font-size:14px;">Repeat steps 6–9 for each JAR until all are verified:</p>
+    <ul>
+      <li class="done">AmdocsCore.jar — verified</li>
+      <li class="done">AmdocsSecurityManager.jar — verified</li>
+      <li class="done">log4j-core.jar — verified</li>
+      <li class="pending">commons-io.jar — run next</li>
+      <li class="pending">slf4j-api.jar — pending</li>
+    </ul>
+    <div class="note">One JAR per comparison run in FOSS/Foundation mode. Save each HTML report if audit is required.</div>
+  </div>
+</body>
+</html>

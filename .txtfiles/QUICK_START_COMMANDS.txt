@@ -1,0 +1,325 @@
+================================================================================
+QUICK START COMMANDS - CRM JAR COMPARISON TOOL
+================================================================================
+
+All commands below use "py" (Windows Python launcher).
+Run these from: C:\Users\SVINAYAK\python_project\
+
+================================================================================
+1. TEST THE PROGRESS TRACKING (NEW!)
+================================================================================
+
+Test the new progress tracking and timeout handling features:
+
+  py test_progress_tracking.py
+
+Expected: All tests PASS, showing progress tracking, timeout handling,
+          error reporting, and progress API all work correctly
+
+--------------------------------------------------------------------------------
+
+2. TEST THE NORMALIZATION FIX
+================================================================================
+
+Test that version patterns are normalized correctly:
+
+  py test_normalization.py
+
+Expected: All tests PASS, showing patterns like winpack__V10_0_1_22.jar 
+          are normalized to winpack.jar
+
+--------------------------------------------------------------------------------
+
+3. DEMO NESTED PATH NORMALIZATION
+================================================================================
+
+See how nested JAR paths within archives are normalized:
+
+  py demo_nested_normalization.py
+
+Expected: Shows how nested paths like crm/.../winpack__V10_0_1_22.jar
+          are matched with crm/.../winpack__V10_0_1_21.jar
+
+--------------------------------------------------------------------------------
+
+4. COMPARE YOUR CRM SDK JAR FILES (RECOMMENDED)
+================================================================================
+
+Compare HFB22 vs HFB21 SDK JARs with normalization enabled:
+
+  py compare_crm_jars.py
+
+What it does:
+  - Compares SDK_CRM_10.0.1.22 (HFB22) vs SDK_CRM_10.0.1.21 (HFB21)
+  - Applies all normalization rules automatically
+  - Generates text and HTML reports
+  - Shows only REAL differences (not naming variations)
+
+Output files:
+  - crm_sdk_comparison_YYYYMMDD_HHMMSS.txt
+  - crm_sdk_comparison_YYYYMMDD_HHMMSS.html
+
+--------------------------------------------------------------------------------
+
+5. MAIN COMPARISON TOOL - FULL INTEGRATED COMPARISON (SINGLE SHOT!)
+================================================================================
+
+Compare any two folders with ALL comparison logics integrated:
+
+  py main.py --custom-folders ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2" ^
+    --show-all-differences
+
+Features automatically included:
+  ✓ File-level comparison (size, hash, timestamps)
+  ✓ Archive contents comparison WITH NORMALIZATION
+  ✓ JAR manifest comparison
+  ✓ Nested archive recursion (EAR → WAR → JAR)
+  ✓ .pack.gz file normalization
+  ✓ Version pattern normalization (__V10_0_1_22 handled)
+  ✓ Java jar command fallback for corrupt files
+
+Example - Compare release directories:
+
+  py main.py --custom-folders ^
+    --folder1 "\\server\share\HFB22_release" ^
+    --folder2 "\\server\share\HFB21_release" ^
+    --show-all-differences
+
+Example - Compare local folders:
+
+  py main.py --custom-folders ^
+    --folder1 "C:\temp\release1" ^
+    --folder2 "C:\temp\release2" ^
+    --show-all-differences
+
+--------------------------------------------------------------------------------
+
+6. NAMING CONVENTION COMPARISON ONLY
+================================================================================
+
+Compare only file naming conventions (no content comparison):
+
+  py main.py --custom-folders --naming-convention ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2"
+
+Output: Report showing naming pattern differences and similarities
+
+--------------------------------------------------------------------------------
+
+7. SIMPLE FILE NAME COMPARISON
+================================================================================
+
+Compare only file names (fastest, no content or metadata):
+
+  py main.py --custom-folders --simple-names ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2"
+
+Output: Report showing which files exist in each folder
+
+--------------------------------------------------------------------------------
+
+8. INTERACTIVE COPY AND COMPARE MODE
+================================================================================
+
+Copy folders from network share, then compare:
+
+  py main.py --prompt-copy-compare
+
+What it does:
+  - Prompts for source folders to copy
+  - Copies both folders to C:\Users\SVINAYAK\CompareASCFHFBundleReleases
+  - Runs comparison on copied folders
+  - Optionally copies results to server location
+
+--------------------------------------------------------------------------------
+
+9. WEB INTERFACE WITH AUTO-TESTS (RECOMMENDED)
+================================================================================
+
+Start the enhanced web server (automatically runs all tests on startup):
+
+  .\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 5000
+
+Or with py launcher:
+
+  py builtin_server.py --host 0.0.0.0 --port 5000
+
+Skip tests for faster startup:
+
+  py builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+
+Then open browser to: http://localhost:5000
+
+Features:
+  - Automatically runs normalization tests on startup
+  - Quick action buttons for CRM JAR comparison
+  - Run demo tests from web UI
+  - Upload folders or specify network paths
+  - Multiple comparison modes (full, naming, archives, FOSS)
+  - View HTML reports in browser
+  - Browse and download previous reports
+  - Network accessible (if host is 0.0.0.0)
+
+Alternative (Flask-based, no auto-tests):
+
+  py web_app.py
+
+--------------------------------------------------------------------------------
+
+10. NETWORK DIAGNOSTICS
+================================================================================
+
+Test network access to shared folders:
+
+  py main.py --diagnose --base-path "\\DVCIISILON01\cm_share3"
+
+What it does:
+  - Tests connectivity to network server
+  - Checks read permissions
+  - Provides troubleshooting suggestions
+
+--------------------------------------------------------------------------------
+
+11. ADVANCED OPTIONS
+================================================================================
+
+Show all differences (not just missing files):
+
+  py main.py --custom-folders --show-all-differences ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2"
+
+Ignore timestamp-only differences:
+
+  py main.py --custom-folders --ignore-timestamp-only ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2"
+
+Use local copy for network folders (faster for large comparisons):
+
+  py main.py --custom-folders --use-local-copy ^
+    --folder1 "\\network\path1" ^
+    --folder2 "\\network\path2"
+
+Specify output file:
+
+  py main.py --custom-folders ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2" ^
+    --output "my_comparison_report.txt"
+
+================================================================================
+
+12. PROGRESS TRACKING AND TIMEOUT FEATURES (NEW!)
+================================================================================
+
+The tool now includes real-time progress tracking with automatic timeout handling:
+
+WEB UI Features:
+  ✓ Real-time progress bar showing % completion
+  ✓ Files processed count (e.g., "1508 / 2000")
+  ✓ Current file being compared
+  ✓ Estimated time remaining (dynamically calculated)
+  ✓ Auto-scroll to keep progress visible
+
+Timeout Protection:
+  ✓ Overall comparison timeout: 2 hours (default)
+  ✓ Per-file timeout: 10 minutes (default)
+  ✓ Generates partial report on timeout/error
+  ✓ Network error resilience with auto-retry
+
+To use progress tracking:
+1. Start web server: py builtin_server.py --host 0.0.0.0 --port 5000
+2. Open browser: http://localhost:5000
+3. Run comparison - progress bar appears automatically!
+
+Test progress tracking:
+  py test_progress_tracking.py
+
+Read documentation:
+  - PROGRESS_TRACKING_GUIDE.md      (comprehensive guide)
+  - PROGRESS_FEATURE_SUMMARY.txt    (quick summary)
+
+--------------------------------------------------------------------------------
+
+13. PERFORMANCE OPTIONS (NEW!)
+================================================================================
+
+FASTEST - Skip deep archive analysis (2-5 minutes):
+
+  py main.py --custom-folders ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2" ^
+    --no-deep-archive-compare ^
+    --show-all-differences
+
+FAST - Deep analysis only for changed archives (10-20 minutes, RECOMMENDED):
+
+  py main.py --custom-folders ^
+    --folder1 "path\to\folder1" ^
+    --folder2 "path\to\folder2" ^
+    --deep-compare-if-different ^
+    --show-all-differences
+
+Or use the batch scripts:
+  compare_ascf_fastest.bat  - Fastest (file-level only)
+  compare_ascf_fast.bat     - Smart (recommended)
+
+================================================================================
+
+MOST COMMON USE CASES
+================================================================================
+
+Quick test of normalization fix:
+  py test_normalization.py
+
+Compare your CRM SDK JARs:
+  py compare_crm_jars.py
+
+Compare any two folders:
+  py main.py --custom-folders --folder1 "path1" --folder2 "path2"
+
+Interactive mode:
+  py main.py --prompt-copy-compare
+
+Web interface:
+  py web_app.py
+
+================================================================================
+
+TROUBLESHOOTING
+================================================================================
+
+If you get "python is not recognized":
+  - Use "py" instead of "python"
+  - Or use full path: C:\Python3X\python.exe
+
+If network paths don't work:
+  - Run diagnostics: py main.py --diagnose --base-path "\\server\share"
+  - Map network drive first: net use Z: \\server\share
+  - Use --use-local-copy flag
+
+If comparison is slow:
+  - Use --use-local-copy for network folders
+  - Use --simple-names for quick file list comparison
+  - Use --naming-convention to skip content comparison
+
+================================================================================
+
+HELP AND DOCUMENTATION
+================================================================================
+
+View all options:
+  py main.py --help
+
+Read detailed documentation:
+  - NORMALIZATION_FIX_README.md  (normalization details)
+  - FIX_SUMMARY.txt              (quick reference)
+  - QUICK_START_COMMANDS.txt     (this file)
+
+================================================================================
+

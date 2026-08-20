@@ -1,0 +1,5 @@
+.Set DiskDirectoryTemplate=C:\Users\SVINAYAK\Desktop\python_project\build_iexpress
+.Set CabinetNameTemplate=C:\Users\SVINAYAK\Desktop\python_project\dist\ASCF_Compare_Tool.cab
+.Set Compress=on
+setup.cmd
+payload.zip

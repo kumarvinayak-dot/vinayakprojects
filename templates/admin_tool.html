@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administrative Tool</title>
+    <style>
+      :root { --accent:#7c3aed; --bg:#f6f7fb; --bg2:#f5f3ff; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .card-purple { background:#f5f3ff; border:1px solid #7c3aed; }
+      select, input[type="text"] { width:100%; padding:10px 12px; border:1px solid #7c3aed; border-radius:8px; background:#fff; font-size:14px; }
+      select { cursor:pointer; }
+      select:focus, input[type="text"]:focus { border-color: #6d28d9; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); outline:none; }
+      label { display:block; font-weight:600; margin-bottom:8px; color:#5b21b6; }
+      button { background:linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%); color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition: transform 0.1s, filter 0.15s; }
+      button:hover { filter: brightness(1.05); }
+      button:active { transform: translateY(1px); }
+      small { color: var(--muted); }
+      .back { color:#fff; }
+      .warning-box { background:#fefce8; border:1px solid #f59e0b; border-radius:8px; padding:15px; margin-top:16px; }
+      .warning-box h4 { color:#d97706; margin-top:0; }
+      .warning-box ul { color:#92400e; margin:0; padding-left:20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Administrative Tool</h2>
+        <a class="back" href="{{ url_for('index') }}">← Back</a>
+      </div>
+      
+      <div class="card card-purple">
+        <h3 style="margin-top:0; color:#7c3aed;">🔧 Add New Hotfix Release</h3>
+        <p style="color:#6b7280; margin-bottom:15px;">This tool will automatically navigate to the Foundation site and add a new hotfix release.</p>
+        
+        <form method="post" action="{{ url_for('admin_tool_submit') }}">
+          <div style="margin-bottom:15px;">
+            <label>ASCF Product Version</label>
+            <select name="ascf_version" required>
+              <option value="">-- Select ASCF Product Version --</option>
+              <option value="10.25.0.pb00">10.25.0.pb00</option>
+              <option value="10.24.0.pb01">10.24.0.pb01</option>
+              <option value="10.24.0.pb00">10.24.0.pb00</option>
+              <option value="10.1.0.pb01">10.1.0.pb01</option>
+              <option value="10.1.0.pb00">10.1.0.pb00</option>
+              <option value="9.22.0.pb01">9.22.0.pb01</option>
+              <option value="9.22.0.pb00">9.22.0.pb00</option>
+              <option value="9.3.0.pb01">9.3.0.pb01</option>
+              <option value="9.0.0.pb05">9.0.0.pb05</option>
+              <option value="9.0.0.pb04">9.0.0.pb04</option>
+              <option value="9.0.0.pb03">9.0.0.pb03</option>
+              <option value="9.0.0.pb02">9.0.0.pb02</option>
+              <option value="9.0.0.pb01">9.0.0.pb01</option>
+              <option value="9.0.0.pb00">9.0.0.pb00</option>
+              <option value="8.2.0.pb01">8.2.0.pb01</option>
+              <option value="8.2.0.pb02">8.2.0.pb02</option>
+              <option value="8.2.0.pb03">8.2.0.pb03</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>New Hotfix Version</label>
+            <input type="text" name="hotfix_version" required placeholder="Enter hotfix version (e.g., 10.24.0.pb01_hf09)" />
+            <small style="display:block; margin-top:4px;">Example: 10.24.0.pb01_hf09</small>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>Release Date</label>
+            <input type="text" name="release_date" required placeholder="Enter release date (e.g., 2026-02-17)" />
+            <small style="display:block; margin-top:4px;">Example: 2026-02-17</small>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>Download URL</label>
+            <input type="text" name="download_url" required placeholder="Enter download URL (e.g., 10240pb01hf09_download.html)" />
+            <small style="display:block; margin-top:4px;">Example: 10240pb01hf09_download.html</small>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>Release Notes URL</label>
+            <input type="text" name="release_notes_url" required placeholder="Enter release notes URL (e.g., ReleaseNotes/relnotes10_24_0_pb01_hf09.pdf)" />
+            <small style="display:block; margin-top:4px;">Example: ReleaseNotes/relnotes10_24_0_pb01_hf09.pdf</small>
+          </div>
+          
+          <div style="margin-top:20px;">
+            <button type="submit">Submit & Launch Automation</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="warning-box">
+        <h4>⚠️ Important Notes</h4>
+        <ul>
+          <li>This tool will automatically navigate to the Foundation site and fill in the form</li>
+          <li>Browser automation uses Selenium WebDriver with Chrome</li>
+          <li>The browser window will remain open for you to verify the data</li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

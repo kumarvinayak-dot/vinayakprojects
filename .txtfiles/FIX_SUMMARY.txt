@@ -1,0 +1,168 @@
+================================================================================
+CRM JAR COMPARISON FIX - SUMMARY
+================================================================================
+
+PROBLEM STATEMENT:
+------------------
+When comparing SDK JAR files between HFB22 and HFB21 releases:
+  Folder 1: SDK_CRM_10.0.1.22_linux64_20251120_2043.jar (HFB22)
+  Folder 2: SDK_CRM_10.0.1.21_linux64_20250908_1434.jar (HFB21)
+
+The comparison report showed "No differences found" but there were 
+version-specific naming convention differences in nested paths:
+  - winpack__V10_0_1_22.jar vs winpack__V10_0_1_21.jar
+  - Unsigned JAR naming differences
+  - AmdocsCRM.ear version suffixes
+
+These naming differences were causing confusion because they were 
+EXPECTED differences between releases (not actual content changes).
+
+================================================================================
+
+SOLUTION IMPLEMENTED:
+---------------------
+Enhanced the archive filename normalization in src/folder_compare.py
+to handle CRM-specific naming patterns:
+
+1. CRM Version Patterns (__V10_0_1_22):
+   - winpack__V10_0_1_22.jar  → winpack.jar
+   - winpack__V10_0_1_21.jar  → winpack.jar
+   - Result: Both normalize to same name = NO FALSE POSITIVE
+
+2. Embedded Versions (_10.0.1.22_):
+   - SDK_CRM_10.0.1.22_linux64_20251120_2043.jar → SDK_CRM_linux64.jar
+   - SDK_CRM_10.0.1.21_linux64_20250908_1434.jar → SDK_CRM_linux64.jar
+   - Result: Both normalize to same name = NO FALSE POSITIVE
+
+3. Unsigned JAR Suffixes:
+   - module_unsigned.jar → module.jar
+   - module.jar          → module.jar
+   - Result: Both normalize to same name = NO FALSE POSITIVE
+
+4. AmdocsCRM.ear Versions:
+   - AmdocsCRM_10.0.1.22.ear → AmdocsCRM.ear
+   - AmdocsCRM_10.0.1.21.ear → AmdocsCRM.ear
+   - Result: Both normalize to same name = NO FALSE POSITIVE
+
+================================================================================
+
+VERIFICATION:
+-------------
+All test cases PASSED:
+
+[PASS] winpack__V10_0_1_22.jar
+[PASS] winpack__V10_0_1_21.jar
+[PASS] SDK_CRM_10.0.1.22_linux64_20251120_2043.jar
+[PASS] SDK_CRM_10.0.1.21_linux64_20250908_1434.jar
+[PASS] module_unsigned.jar
+[PASS] AmdocsCRM_10.0.1.22.ear
+[PASS] AmdocsCRM_10.0.1.21.ear
+
+Nested path matching also verified and working correctly.
+
+================================================================================
+
+HOW TO USE THE FIX:
+-------------------
+
+Method 1: Compare using existing main.py
+-----------------------------------------
+py main.py --custom-folders ^
+  --folder1 "\\DVCIISILON01\cm_share3\10.0.1\AmdocsCRM10.0.PB1.HFB22_release\release\SDK_linux\SDK_CRM_10.0.1.22_linux64_20251120_2043.jar" ^
+  --folder2 "\\DVCIISILON01\cm_share3\10.0.1\AmdocsCRM10.0.PB1.HFB21_release\release\SDK_linux\SDK_CRM_10.0.1.21_linux64_20250908_1434.jar"
+
+Method 2: Use the dedicated CRM comparison script
+--------------------------------------------------
+py compare_crm_jars.py
+
+This script has your JAR paths pre-configured and will:
+  - Compare the two SDK JAR files
+  - Apply normalization automatically
+  - Generate detailed text and HTML reports
+  - Show only REAL differences (not naming variations)
+
+Method 3: Test normalization patterns
+--------------------------------------
+py test_normalization.py          # Test the normalization logic
+py demo_nested_normalization.py   # See how nested paths are normalized
+
+================================================================================
+
+FILES MODIFIED/CREATED:
+-----------------------
+MODIFIED:
+  - src/folder_compare.py
+    Enhanced _normalize_archive_filename() method
+
+NEW FILES:
+  - test_normalization.py           # Unit tests for normalization
+  - demo_nested_normalization.py    # Demonstration of nested path handling
+  - compare_crm_jars.py            # Ready-to-use comparison script
+  - NORMALIZATION_FIX_README.md    # Detailed documentation
+  - FIX_SUMMARY.txt               # This summary file
+
+================================================================================
+
+BENEFITS:
+---------
+✓ Eliminates false positives from version number differences
+✓ Focuses comparison on actual content changes
+✓ Handles nested archives recursively (EAR → WAR → JAR)
+✓ Backward compatible with existing comparisons
+✓ Fully tested and verified
+✓ Works with all archive types (.jar, .war, .ear, .zip, .rpm)
+
+================================================================================
+
+NEXT STEPS:
+-----------
+1. Run the comparison on your JAR files:
+   py compare_crm_jars.py
+   
+2. Review the generated reports to confirm:
+   - Naming differences are normalized (no longer reported as differences)
+   - Only actual content differences are shown
+   
+3. If the comparison still reports differences, those are REAL differences
+   in the archive contents (not just naming variations)
+
+4. If you encounter additional naming patterns that need normalization,
+   add them to test_normalization.py and update the regex patterns
+
+================================================================================
+
+TECHNICAL DETAILS:
+------------------
+The normalization uses these regex patterns (applied in order):
+
+1. Remove "unsigned" suffix:
+   r'[-_]unsigned$'
+
+2. Strip CRM version patterns:
+   r'__+V\d+(?:[_\.]\d+)*'
+
+3. Strip embedded versions:
+   r'_\d+\.\d+(?:\.\d+)*(?:\.\d+)*_'
+
+4. Strip standard version suffixes:
+   r'[-_]\d+\.\d+(?:\.\d+)*(?:-[A-Za-z0-9]+)*$'
+
+5. Strip timestamps:
+   r'[-_](?:b?\d{3,}|build-?\d+|\d{8}(?:_\d{4})?|\d{14})$'
+
+6. Clean up extra underscores/dashes
+
+The normalization is applied recursively to all nested archives,
+ensuring consistent comparison at all levels.
+
+================================================================================
+
+CONTACT/SUPPORT:
+----------------
+If you have questions or encounter issues:
+  1. Check the logs in the generated reports
+  2. Run test_normalization.py to verify patterns
+  3. Review NORMALIZATION_FIX_README.md for detailed docs
+
+================================================================================
+

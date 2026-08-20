@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 3 — Start Server</title>
+  <style>
+    body { font-family: Consolas, "Courier New", monospace; background: #0c0c0c; color: #cccccc; margin: 0; padding: 16px; }
+    .window { border: 1px solid #3a3a3a; border-radius: 6px; overflow: hidden; max-width: 900px; }
+    .title { background: #1f1f1f; padding: 8px 12px; font-family: Segoe UI, sans-serif; font-size: 13px; }
+    pre { margin: 0; padding: 16px; line-height: 1.45; font-size: 13px; white-space: pre-wrap; }
+    .ok { color: #4ade80; }
+    .head { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="title">ASCF Server - Starting... — start_server.bat</div>
+    <pre><span class="head">============================================================
+         ASCF Comparison Tool - Starting Server
+         HTTP + HTTPS (when .ssl\certs exist)
+============================================================</span>
+
+Stopping any listeners on HTTP_PORT 5000 and HTTPS_PORT 5443...
+
+<span class="head">  HTTP:  http://localhost:5000/crm
+  HTTPS: https://localhost:5443/crm
+  Network HTTP:  http://10.19.164.180:5000/crm
+  Network HTTPS: https://10.19.164.180:5443/crm</span>
+
+Server start command issued (HTTP 5000, HTTPS 5443 when certs exist).
+
+<span class="ok">[SUCCESS] Server is listening on HTTP port 5000
+[SUCCESS] HTTPS listening on port 5443</span></pre>
+  </div>
+</body>
+</html>

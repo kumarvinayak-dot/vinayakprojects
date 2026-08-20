@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comparison Tool — Installation Instructions</title>
+  <style>
+    :root { --bg:#f1f5f9; --card:#fff; --text:#0f172a; --muted:#64748b; --accent:#4f46e5; --border:#cbd5e1; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { background: linear-gradient(90deg,#312e81,#4f46e5); color: #fff; padding: 28px 24px; }
+    header h1 { margin: 0 0 8px; font-size: 1.75rem; }
+    header p { margin: 0; opacity: .95; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+    .card h2 { margin: 0 0 12px; font-size: 1.2rem; color: var(--accent); }
+    .card h3 { margin: 16px 0 8px; font-size: 1rem; color: #334155; }
+    .card p { margin: 0 0 12px; }
+    .card p:last-child { margin-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: #eef2ff; width: 160px; }
+    code, pre { font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+    code { background: #eef2ff; padding: 2px 6px; border-radius: 4px; word-break: break-all; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+    ol, ul { margin: 8px 0 12px; padding-left: 22px; }
+    li { margin: 6px 0; }
+    .badge { display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #86efac; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+    .alert { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 14px 16px; margin: 12px 0; font-size: 14px; }
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 16px; }
+    footer a { color: var(--accent); }
+    @media (max-width: 640px) { th { width: auto; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Comparison Tool — Installation Instructions</h1>
+    <p>Developed by Vinayak Srivastava</p>
+  </header>
+  <main>
+
+    <section class="card">
+      <span class="badge">Localhost-only mode</span>
+      <p>Each user installs and runs the tool <strong>on their own PC</strong>. The server listens on <strong>localhost only</strong> (<code>127.0.0.1</code>). Other computers cannot connect. No shared network HTTP/HTTPS URLs are used.</p>
+      <p>Markdown version: <a href="INSTALL_INSTRUCTIONS.md">INSTALL_INSTRUCTIONS.md</a></p>
+    </section>
+
+    <section class="card">
+      <h2>What you receive</h2>
+      <p>Your team lead shares one file:</p>
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>Comparison Tool.zip</code></td><td>ZIP installer package for your PC</td></tr>
+      </table>
+      <p>The ZIP includes this document, <code>INSTALL_INSTRUCTIONS.md</code>, <code>INSTALL.cmd</code> (recommended installer), and <code>launch_comparison_tool.bat</code> (daily launcher). There is <strong>no <code>.exe</code> installer</strong> — this avoids antivirus false positives on corporate PCs.</p>
+    </section>
+
+    <section class="card">
+      <h2>Before you install</h2>
+      <table>
+        <tr><th>PC</th><td>Windows 10 or 11 (64-bit)</td></tr>
+        <tr><th>Python</th><td><strong>3.10 or newer</strong> must be installed (<a href="https://www.python.org/downloads/">python.org</a>) — check <strong>Add Python to PATH</strong> during install</td></tr>
+        <tr><th>Disk space</th><td>~50 GB free on <strong>C:</strong> for large build comparisons</td></tr>
+        <tr><th>Network</th><td>Access to corporate NAS/build paths (e.g. <code>\\ntnet\...</code>, <code>\\INPNQASCFLB02\...</code>)</td></tr>
+        <tr><th>Browser</th><td>Chrome or Edge</td></tr>
+        <tr><th>Optional</th><td><code>C:\cfr-0.152.jar</code> for Java source diff in CRM reports</td></tr>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Install (one time)</h2>
+      <ol>
+        <li>Copy <strong><code>Comparison Tool.zip</code></strong> to your PC (e.g. Desktop, Downloads, or <code>C:\</code>).</li>
+        <li><strong>Right-click</strong> the ZIP → <strong>Extract All…</strong> (or unzip with 7-Zip / WinRAR).</li>
+        <li>Open the extracted <strong><code>Comparison Tool</code></strong> folder (paths with spaces are fine).</li>
+        <li><strong>Double-click</strong> <code>INSTALL.cmd</code> in that folder (<code>setup.cmd</code> still works for compatibility).</li>
+        <li>Wait for setup to finish. It creates <code>.venv</code> and installs packages with a <strong>clean pip install</strong> (no cache). This may take <strong>5–15 minutes</strong>.</li>
+        <li>When you see <strong>Installation complete</strong>, press Enter.</li>
+      </ol>
+      <p>No Desktop or Start Menu shortcuts are created. Use the batch files in the extracted folder.</p>
+    </section>
+
+    <section class="card">
+      <h2>Use the tool (every day)</h2>
+      <ol>
+        <li>Open the install folder and double-click <code>launch_comparison_tool.bat</code> (or <code>start_server.bat</code>).</li>
+        <li>Wait a few seconds — your browser should open <strong>http://localhost:5000/crm</strong> automatically.</li>
+        <li>If it does not, open manually:
+          <pre>http://localhost:5000/crm</pre>
+          <p>Aliases: <code>/ascf</code>, <code>/uxf</code>, <code>/dex</code> (same page).</p>
+        </li>
+        <li>Run build comparison or environment validation (see below).</li>
+        <li>To stop the server, run <code>STOP_SERVER.bat</code> in the install folder.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Run comparisons (all applications)</h2>
+      <p>One web UI supports <strong>ASCF</strong>, <strong>CRM/AMSS</strong>, <strong>UXF/OMNI</strong>, and <strong>DEX</strong>. Single URL: <code>http://localhost:5000/crm</code></p>
+      <h3>Quick steps</h3>
+      <ol>
+        <li>Start the server (<code>launch_comparison_tool.bat</code>).</li>
+        <li>Open <strong>http://localhost:5000/crm</strong>.</li>
+        <li>Enable <strong>Build Comparison</strong>.</li>
+        <li>Select <strong>exactly one</strong> application: ASCF, CRM/AMSS, UXF/OMNI, or DEX.</li>
+        <li>Enter <strong>Old</strong> and <strong>New</strong> build paths (UNC), or use <strong>Load … base paths</strong> buttons.</li>
+        <li>Configure options for that application (table below).</li>
+        <li>Click <strong>Run comparison</strong> — use <strong>Console Output</strong> for live logs.</li>
+        <li>Open the HTML report when the run completes.</li>
+      </ol>
+      <h3>Application-specific notes</h3>
+      <table>
+        <tr><th>Application</th><th>Paths / inputs</th><th>Options</th></tr>
+        <tr>
+          <td><strong>ASCF</strong></td>
+          <td>Old vs new ASCF build roots. <strong>Load ASCF base paths</strong>.</td>
+          <td>Full content, naming convention, archives, or FOSS/Foundation.</td>
+        </tr>
+        <tr>
+          <td><strong>CRM / AMSS</strong></td>
+          <td>Old vs new CRM/AMSS folders. <strong>Load CRM</strong> or <strong>AMSS base paths</strong>.</td>
+          <td>Fast full compare; optional ClfyAgent nested compare; CRM Nexus TAR verification.</td>
+        </tr>
+        <tr>
+          <td><strong>UXF / OMNI</strong></td>
+          <td>Old vs new UXF/OMNI roots. <strong>Load UXF</strong> or <strong>OMNI base paths</strong>.</td>
+          <td>Full folder comparison.</td>
+        </tr>
+        <tr>
+          <td><strong>DEX</strong></td>
+          <td>Nexus previous/latest versions for digital-playbook and/or digital-webapp-ces.</td>
+          <td>Downloads from Nexus and compares artifacts automatically.</td>
+        </tr>
+      </table>
+      <h3>Environment validation</h3>
+      <p>Use <strong>Environment Validation</strong> on the home page to SSH to a Linux host and verify deployment — for any application.</p>
+      <h3>Reports</h3>
+      <ul>
+        <li>HTML reports: <code>\\&lt;your-pc&gt;\c$\crm_compare_reports</code></li>
+        <li>Temp during compare: <code>\\&lt;your-pc&gt;\c$\crm_compare_temp</code></li>
+        <li>Optional CRM Java diffs: <code>C:\cfr-0.152.jar</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Install folder location</h2>
+      <p>Wherever you extracted the ZIP, for example:</p>
+      <pre>C:\Comparison Tool\Comparison Tool</pre>
+      <p>or <code>C:\Users\&lt;you&gt;\Desktop\Comparison Tool</code></p>
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>launch_comparison_tool.bat</code></td><td><strong>Recommended</strong> — start server and open browser (HTTP)</td></tr>
+        <tr><td><code>INSTALL.cmd</code></td><td>One-time install (creates <code>.venv</code>)</td></tr>
+        <tr><td><code>start_server.bat</code></td><td>Start server only (localhost HTTP)</td></tr>
+        <tr><td><code>STOP_SERVER.bat</code></td><td>Stop server</td></tr>
+        <tr><td><code>CHECK_STATUS.bat</code></td><td>Check if server is running</td></tr>
+        <tr><td><code>INSTALL_MANIFEST.txt</code></td><td>Install date, paths, and developer credit</td></tr>
+        <tr><td><code>Uninstall Comparison Tool.bat</code></td><td>Remove the tool</td></tr>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Uninstall</h2>
+      <ol>
+        <li>Stop the server (<code>STOP_SERVER.bat</code>).</li>
+        <li>Run <code>Uninstall Comparison Tool.bat</code> in the install folder.</li>
+        <li>Type <strong>YES</strong> when prompted.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Troubleshooting</h2>
+
+      <h3>“Python 3.10+ not found”</h3>
+      <p>Install Python from <a href="https://www.python.org/downloads/">python.org</a> and enable <strong>Add Python to PATH</strong>, then run <code>INSTALL.cmd</code> again.</p>
+
+      <h3>Browser shows “Can’t reach this page”</h3>
+      <ol>
+        <li>Run <code>start_server.bat</code> again.</li>
+        <li>Run <code>CHECK_STATUS.bat</code> in the install folder.</li>
+        <li>Confirm you use <code>http://localhost:5000/crm</code> (not an IP address or another PC’s name).</li>
+      </ol>
+
+      <h3>Port 5000 already in use</h3>
+      <ol>
+        <li>Run <code>STOP_SERVER.bat</code>.</li>
+        <li>Start again with <code>start_server.bat</code>.</li>
+      </ol>
+
+      <h3>pip install fails (no internet / proxy)</h3>
+      <p>Ask your team lead for offline wheel packages and manual setup (see <code>LOCAL_USER_SETUP.md</code> in the project).</p>
+
+      <h3>Confusing pip messages during install</h3>
+      <p><code>INSTALL.cmd</code> uses <code>pip install --no-cache-dir</code> so you should not see “Cache entry deserialization failed” warnings. Delete <code>.venv</code> and run <code>INSTALL.cmd</code> again if install fails.</p>
+
+      <h3>Windows blocks <code>INSTALL.cmd</code></h3>
+      <p>Right-click <code>INSTALL.cmd</code> → <strong>Run as administrator</strong>, or open Command Prompt in the extracted folder and run:</p>
+      <pre>INSTALL.cmd</pre>
+    </section>
+
+    <section class="card">
+      <h2>For developers: build the distribution ZIP</h2>
+      <p>From the project root on a Windows dev machine:</p>
+      <pre>BUILD_INSTALLER.bat</pre>
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>dist\Comparison Tool.zip</code></td><td>Give this to users</td></tr>
+      </table>
+      <p>Distribute <strong><code>Comparison Tool.zip</code></strong> only. The ZIP contains <code>INSTALL_INSTRUCTIONS.md</code>, <code>INSTALL_INSTRUCTIONS.html</code>, <code>INSTALL.cmd</code>, and <code>launch_comparison_tool.bat</code>.</p>
+    </section>
+
+  </main>
+  <footer>
+    Comparison Tool — Developed by Vinayak Srivastava
+  </footer>
+</body>
+</html>

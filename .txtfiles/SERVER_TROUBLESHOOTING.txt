@@ -1,0 +1,155 @@
+═══════════════════════════════════════════════════════════════════════════
+SERVER TROUBLESHOOTING GUIDE
+═══════════════════════════════════════════════════════════════════════════
+
+ERROR: "10.19.164.180 didn't send any data"
+
+This error means the server crashed or failed to start properly.
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 DIAGNOSIS STEPS
+═══════════════════════════════════════════════════════════════════════════
+
+1. CHECK IF SERVER IS RUNNING
+
+   Open Command Prompt and run:
+   > netstat -ano | findstr "8080"
+   
+   If you see output, the port is in use (good or bad).
+   If no output, server isn't running.
+
+2. CHECK LOGS
+
+   Look at the console where you started the server.
+   Any error messages?
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 1: RESTART THE SERVER
+═══════════════════════════════════════════════════════════════════════════
+
+Use the restart script:
+
+> restart_server.bat
+
+This will:
+1. Kill any existing server processes
+2. Start fresh server on 10.19.164.180:8080
+3. Show any startup errors
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 2: START MANUALLY WITH FULL LOGGING
+═══════════════════════════════════════════════════════════════════════════
+
+> py builtin_server.py --host 10.19.164.180 --port 8080 --skip-demos
+
+Watch for:
+✓ "Built-in server running at http://10.19.164.180:8080"
+
+If you see this, server is running correctly!
+
+If you see ERROR messages, read them carefully.
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 3: TRY DIFFERENT PORT
+═══════════════════════════════════════════════════════════════════════════
+
+Port 8080 might be in use:
+
+> py builtin_server.py --host 10.19.164.180 --port 8081 --skip-demos
+
+Then access: http://10.19.164.180:8081
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 4: CHECK FIREWALL
+═══════════════════════════════════════════════════════════════════════════
+
+Windows Firewall might be blocking:
+
+1. Open Windows Firewall
+2. Allow Python/py.exe through firewall
+3. Allow port 8080 inbound connections
+
+═══════════════════════════════════════════════════════════════════════════
+🐛 DEBUGGING: VIEW DETAILED ERRORS
+═══════════════════════════════════════════════════════════════════════════
+
+If the server DOES start but crashes on comparison:
+
+1. Look at server console output
+2. Error messages now show full traceback
+3. Copy error details and share them
+
+Example error output:
+```
+ERROR in comparison: cannot access local variable 'Path'
+Traceback:
+  File "builtin_server.py", line 1234, in do_GET
+    ...
+```
+
+═══════════════════════════════════════════════════════════════════════════
+🔧 RECENT FIXES APPLIED
+═══════════════════════════════════════════════════════════════════════════
+
+✅ Fixed all Path scoping issues
+✅ Replaced Path / operator with os.path.join()
+✅ Fixed CSS class name mismatches
+✅ Added comprehensive error handling
+✅ Added detailed error messages with tracebacks
+✅ Added startup error detection
+
+═══════════════════════════════════════════════════════════════════════════
+📋 QUICK TEST
+═══════════════════════════════════════════════════════════════════════════
+
+1. Run: restart_server.bat
+
+2. Wait for: "Built-in server running at..."
+
+3. Open browser: http://10.19.164.180:8080
+
+4. If you see the web form: ✓ SERVER IS WORKING!
+
+5. Try a simple comparison:
+   Folder 1: C:\Windows\System32
+   Folder 2: C:\Windows\SysWOW64
+   Mode: Naming convention comparison
+   
+6. If it works: ✓ EVERYTHING IS FIXED!
+
+═══════════════════════════════════════════════════════════════════════════
+❌ STILL NOT WORKING?
+═══════════════════════════════════════════════════════════════════════════
+
+Check these:
+
+1. Python version:
+   > py --version
+   (Should be 3.7 or higher)
+
+2. Check if builtin_server.py has syntax errors:
+   > py -m py_compile builtin_server.py
+   (No output = no errors)
+
+3. Test basic server:
+   > py builtin_server.py --host 127.0.0.1 --port 5000 --skip-demos
+   Then access: http://127.0.0.1:5000
+   
+   If localhost works but IP doesn't:
+   → Network/firewall issue
+
+4. Check Windows Event Viewer for Python crashes
+
+═══════════════════════════════════════════════════════════════════════════
+📞 ERROR REPORTING
+═══════════════════════════════════════════════════════════════════════════
+
+If still having issues, provide:
+
+1. Exact error message from browser
+2. Console output from server
+3. Output of: netstat -ano | findstr "8080"
+4. Python version: py --version
+
+═══════════════════════════════════════════════════════════════════════════
+

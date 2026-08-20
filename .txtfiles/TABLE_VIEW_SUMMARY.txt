@@ -1,0 +1,210 @@
+═══════════════════════════════════════════════════════════════════════════
+NEW FEATURE: TABLE-BASED COMPARISON VIEW (Beyond Compare Style)
+═══════════════════════════════════════════════════════════════════════════
+
+✅ WHAT'S NEW
+
+Your HTML comparison reports now include a comprehensive TABLE VIEW that shows
+all files side-by-side in a single, easy-to-read format - just like Beyond
+Compare!
+
+═══════════════════════════════════════════════════════════════════════════
+📊 THE NEW COMPARISON TABLE
+═══════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ File Name                │ Status         │ Folder 1    │ Folder 2      │
+├─────────────────────────────────────────────────────────────────────────┤
+│ scriptingext.jar         │ 🆕 Add Right   │     —       │ /path/        │ 🟡
+│ app-10.1.0.319.jar      │ ← Miss Right   │ /path/      │     —         │ 🔴
+│ app-10.1.0.344.jar      │ → Miss Left    │     —       │ /path/        │ 🟢
+│ utils-10.1.0.319.jar    │ ✓ Identical    │ /path/      │ /path/        │ 🔵
+└─────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+🎨 COLOR CODING
+═══════════════════════════════════════════════════════════════════════════
+
+The table uses color-coded rows for instant recognition:
+
+🔵 BLUE   = Identical files (present in both folders)
+🔴 RED    = Missing in right folder (only in Folder 1)
+🟢 GREEN  = Missing in left folder (only in Folder 2)
+🟡 YELLOW = Additional/New files (truly new, not version updates)
+
+═══════════════════════════════════════════════════════════════════════════
+🏷️ STATUS BADGES
+═══════════════════════════════════════════════════════════════════════════
+
+Clear visual indicators for each file:
+
+✓ Identical          → File exists in both folders
+← Missing in Right   → Only in Folder 1 (version update)
+→ Missing in Left    → Only in Folder 2 (version update)
+🆕 Additional Right  → Truly NEW file in Folder 2
+🆕 Additional Left   → Truly NEW file in Folder 1
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 BENEFITS
+═══════════════════════════════════════════════════════════════════════════
+
+BEFORE (List View):
+  ❌ Multiple separate sections
+  ❌ Hard to compare side-by-side
+  ❌ Difficult to spot truly new files
+  ❌ Lots of scrolling required
+  ❌ No visual status indicators
+
+AFTER (Table View):
+  ✅ Single unified table
+  ✅ Clear side-by-side comparison
+  ✅ Color-coded for instant recognition
+  ✅ Smart sorting (differences first!)
+  ✅ Visual status badges
+  ✅ Similar to Beyond Compare!
+
+═══════════════════════════════════════════════════════════════════════════
+📋 EXAMPLE: YOUR LIGHTSABER.ZIP COMPARISON
+═══════════════════════════════════════════════════════════════════════════
+
+Comparing BN343 vs BN344:
+
+File Name                                      Status              Folder 1    Folder 2
+─────────────────────────────────────────────────────────────────────────────────────
+scriptingextensions-setup-extensions.jar       🆕 Additional Right      —       ✓
+cmconfig-commons-10.1.0.pb00_hf29.319.jar     ← Missing Right          ✓       —
+cmconfig-commons-10.1.0.pb00_hf29.344.jar     → Missing Left           —       ✓
+datasourceadmin-10.1.0.pb00_hf29.319.jar      ← Missing Right          ✓       —
+datasourceadmin-10.1.0.pb00_hf29.344.jar      → Missing Left           —       ✓
+cmruntime-10.1.0.pb00_hf29.319.jar            ← Missing Right          ✓       —
+cmruntime-10.1.0.pb00_hf29.344.jar            → Missing Left           —       ✓
+helper-utils-common.jar                        ✓ Identical              ✓       ✓
+common-libraries-2.0.jar                       ✓ Identical              ✓       ✓
+
+═══════════════════════════════════════════════════════════════════════════
+INSTANT INSIGHTS:
+═══════════════════════════════════════════════════════════════════════════
+
+From this table, you can IMMEDIATELY see:
+
+1. 🟡 ONE truly NEW file added:
+   → scriptingextensions-setup-extensions.jar (yellow row)
+
+2. 🔴🟢 THREE version updates (.319 → .344):
+   → cmconfig-commons
+   → datasourceadmin
+   → cmruntime
+
+3. 🔵 TWO files unchanged:
+   → helper-utils-common.jar
+   → common-libraries-2.0.jar
+
+═══════════════════════════════════════════════════════════════════════════
+🚀 HOW TO USE
+═══════════════════════════════════════════════════════════════════════════
+
+1. Start the web UI:
+   start_web_gui.bat
+
+2. Run your comparison (e.g., BN343 vs BN344 lightsaber.zip)
+
+3. Open the HTML report
+
+4. Look for the navigation menu at the top:
+   ┌──────────────────────────────────────┐
+   │ 📑 Quick Navigation                  │
+   │                                      │
+   │ 📊 Detailed Comparison Table  ← NEW! │
+   │ 🆕 Additional/New Files              │
+   │ ❌ Missing from Folder 2             │
+   │ ✅ Missing from Folder 1             │
+   │ ✓ Exact Matches                      │
+   └──────────────────────────────────────┘
+
+5. Click "📊 Detailed Comparison Table"
+
+6. Instantly see ALL files in one table with color coding!
+
+═══════════════════════════════════════════════════════════════════════════
+🎪 INTERACTIVE FEATURES
+═══════════════════════════════════════════════════════════════════════════
+
+✨ Hover over any row → Highlights with smooth animation
+✨ Smart sorting → Differences at the top, matches at the bottom
+✨ Responsive design → Works on mobile devices too
+✨ Direct navigation → Click link to jump straight to the table
+✨ Clear legend → Color meanings explained right above the table
+
+═══════════════════════════════════════════════════════════════════════════
+📱 WORKS EVERYWHERE
+═══════════════════════════════════════════════════════════════════════════
+
+The table automatically adapts to:
+  • Desktop screens (full table view)
+  • Tablets (adjusted column widths)
+  • Mobile phones (scrollable, smaller fonts)
+
+═══════════════════════════════════════════════════════════════════════════
+✅ FILES UPDATED
+═══════════════════════════════════════════════════════════════════════════
+
+✅ builtin_server.py - Added table CSS and HTML generation
+✅ web_app.py - Same changes for consistency
+✅ TABLE_VIEW_COMPARISON_FEATURE.md - Technical documentation
+✅ TABLE_VIEW_SUMMARY.txt - This quick reference
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 REAL-WORLD EXAMPLE
+═══════════════════════════════════════════════════════════════════════════
+
+SCENARIO: You need to know what changed between BN343 and BN344
+
+OLD WAY (5+ minutes):
+  1. Scroll to "Missing from Folder 2" section
+  2. Read list of removed files
+  3. Scroll to "Missing from Folder 1" section
+  4. Read list of added files
+  5. Try to figure out which are version updates vs truly new
+  6. Scroll to "Exact Matches"
+  7. Verify unchanged files
+  8. Mentally piece everything together
+
+NEW WAY (30 seconds):
+  1. Click "📊 Detailed Comparison Table"
+  2. Scan the table:
+     • Yellow rows = NEW files
+     • Red/Green rows = Version updates
+     • Blue rows = Unchanged
+  3. DONE! ✓
+
+═══════════════════════════════════════════════════════════════════════════
+💡 PRO TIPS
+═══════════════════════════════════════════════════════════════════════════
+
+1. Look for YELLOW rows first
+   → These are truly NEW files (not version updates)
+
+2. Differences appear at the TOP
+   → You don't need to scroll through matches to find changes
+
+3. Empty cell = File doesn't exist in that folder
+   → Shows as "—" for clarity
+
+4. Status badges are color-coded too
+   → Match the row background for consistency
+
+5. Use Ctrl+F (Find) in the browser
+   → Search for specific file names in the table
+
+═══════════════════════════════════════════════════════════════════════════
+🎉 READY TO USE!
+═══════════════════════════════════════════════════════════════════════════
+
+The table view is now LIVE in your HTML comparison reports!
+
+Run your next comparison and experience the Beyond Compare-style table view.
+
+Finding differences has never been easier! 🚀
+
+═══════════════════════════════════════════════════════════════════════════
+

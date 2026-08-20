@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 20 — Submit admin tool</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 0; background: #f5f3ff; padding: 16px; }
+    .card { background: #f5f3ff; border: 2px solid #7c3aed; border-radius: 12px; padding: 18px; max-width: 920px; margin: 0 auto; }
+    label { font-weight: 600; font-size: 13px; display: block; margin: 10px 0 6px; color: #5b21b6; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #7c3aed; border-radius: 8px; font-size: 13px; box-sizing: border-box; background: #fff; }
+    .step { color: #059669; font-weight: 700; margin-bottom: 8px; }
+    .btn { margin-top: 14px; padding: 12px 20px; background: linear-gradient(90deg,#7c3aed,#6d28d9); color: #fff; border: 0; border-radius: 8px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 20</div>
+    <h3 style="margin:0 0 12px;color:#7c3aed;">🔧 Add New Hotfix Release</h3>
+    <label>ASCF Product Version</label>
+    <select><option selected>10.24.0.pb01</option></select>
+    <label>New Hotfix Version</label>
+    <input value="10.24.0.pb01_hf10" readonly />
+    <label>Release Date</label>
+    <input value="2026-06-09" readonly />
+    <label>Download URL</label>
+    <input value="http://foundations/.../download_hf10.html" readonly />
+    <label>Release Notes URL</label>
+    <input value="http://foundations/.../ReleaseNotes_hf10.html" readonly />
+    <button class="btn">Submit &amp; Launch Automation</button>
+  </div>
+</body>
+</html>

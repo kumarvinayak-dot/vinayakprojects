@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Report</title>
+    <style>
+      :root { --accent:#0d6efd; --bg:#f6f7fb; --bg2:#eef2ff; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #6366f1 0%, #0ea5e9 50%, #22c55e 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      pre { white-space: pre-wrap; word-wrap: break-word; background: #0b1220; color:#e6edf3; padding: 16px; border: 1px solid #0f1a33; border-radius: 12px; box-shadow: 0 2px 10px rgba(2,6,23,0.25); }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .actions { margin: 12px 0 24px; }
+      a.button { display: inline-block; padding: 10px 14px; background: linear-gradient(90deg, #0ea5e9 0%, #0d6efd 100%); color: #fff; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 10px rgba(13,110,253,0.25); }
+      a.button:hover { filter: brightness(0.98); }
+      a, .back { color: var(--accent); text-decoration: none; }
+      a:hover, .back:hover { text-decoration: underline; }
+      .note { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>Report</div>
+        <a class="back" href="{{ url_for('index') }}">← Back</a>
+      </div>
+
+      {% if saved_filename %}
+        <div class="card">
+          <div class="actions">
+            <a class="button" href="{{ url_for('download_report', filename=saved_filename) }}">Download saved report</a>
+            <span class="note">Saved as {{ saved_filename }}</span>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="card">
+        <pre>{{ report_text }}</pre>
+      </div>
+    </div>
+  </body>
+  </html>
+
+
+
+
+
+
+
+
+

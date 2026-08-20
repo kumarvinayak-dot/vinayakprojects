@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 5 — FOSS/Foundation mode</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 0; background: #faf5ff; padding: 16px; }
+    .card { background: #fff; border: 1px solid #d8b4fe; border-radius: 12px; padding: 18px; max-width: 920px; margin: 0 auto; }
+    h3 { margin: 0 0 12px; color: #6b21a8; font-size: 14px; text-transform: uppercase; }
+    .options label { display: block; margin: 8px 0; padding: 10px 12px; border: 1px solid #e9d5ff; border-radius: 8px; }
+    .options label.sel { border: 2px solid #7c3aed; background: #f5f3ff; font-weight: 700; }
+    .step { color: #059669; font-weight: 700; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 5</div>
+    <h3>ASCF comparison mode</h3>
+    <div class="options">
+      <label><input type="radio" /> Full content comparison</label>
+      <label><input type="checkbox" /> Naming convention comparison</label>
+      <label><input type="radio" /> Archives (.ear/.war/.zip/.rpm/.jar)</label>
+      <label class="sel"><input type="radio" checked /> FOSS/Foundation (JAR Implementation-Version)</label>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin:12px 0 0;">Select <strong>FOSS/Foundation</strong> to compare MANIFEST.MF Implementation-Version for one JAR per run.</p>
+  </div>
+</body>
+</html>

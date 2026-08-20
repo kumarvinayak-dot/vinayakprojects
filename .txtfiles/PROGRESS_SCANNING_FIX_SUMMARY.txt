@@ -1,0 +1,306 @@
+================================================================================
+PROGRESS BAR STUCK AT "0 / 1" FIX - ARCHIVE SCANNING PROGRESS
+================================================================================
+
+ISSUE:
+------
+When comparing lightsaber.zip files directly:
+  \\RAAISILON\...\BN212\lightsaber.zip
+  \\RAAISILON\...\BN210\lightsaber.zip
+
+Progress bar showed:
+  Status: Running
+  Files processed: 0 / 1
+  Estimated time remaining: Calculating...
+
+And stayed stuck there even though the comparison was actually working.
+
+ROOT CAUSE:
+-----------
+When comparing two archive files directly (file-to-file), the code set:
+  total_files = 1  (because comparing 1 pair of archives)
+  processed_files = 0
+
+But the REAL work happens in these hidden phases:
+1. Scanning archive 1 (reading thousands of files inside)
+2. Scanning archive 2 (reading thousands of files inside)
+3. Comparing the contents
+
+These phases could take minutes/hours for large archives like lightsaber.zip,
+but there was NO progress shown during scanning. The progress bar stayed at
+"0 / 1" until the entire comparison finished.
+
+Result: User thinks it's stuck when it's actually working hard!
+
+FIX APPLIED:
+------------
+Changed archive comparison to show DETAILED PROGRESS with 3 phases:
+
+PHASE 1: Scanning Archive 1
+  - Shows "Phase 1/3: Scanning lightsaber.zip..."
+  - Updates every 100 entries: "Scanning lightsaber.zip: 1000/5000 entries"
+  - Shows nested archive processing: "Processing nested archive: path/to/file.jar"
+
+PHASE 2: Scanning Archive 2
+  - Shows "Phase 2/3: Scanning lightsaber.zip..."
+  - Updates every 100 entries with progress
+  - Shows total files found after scan
+
+PHASE 3: Comparing Contents
+  - Shows "Phase 3/3: Comparing archives..."
+  - Updates every 100 files: "Comparing 1000/5000 common files"
+  - Shows completion message
+
+CHANGES IN src/folder_compare.py:
+----------------------------------
+
+1. _list_zip_members() (lines 1707-1745):
+   BEFORE:
+     - Silent scanning, no progress updates
+     - Processed all members without feedback
+   
+   AFTER:
+     + Get total member count: total_members = len(infolist)
+     + Update status: "Scanning {archive} ({total} entries)..."
+     + Update every 100 members: "Scanning {archive}: {idx}/{total} entries"
+     + Show nested processing: "Processing nested archive: {name}"
+
+2. Direct file comparison (lines 2068-2140):
+   BEFORE:
+     - total_files = 1
+     - No phase tracking
+     - Single update at end
+   
+   AFTER:
+     + total_files = 3 (for 3 phases)
+     + processed_files updates after each phase
+     + Phase 1: Scan archive 1, update to 1/3 when done
+     + Phase 2: Scan archive 2, update to 2/3 when done
+     + Phase 3: Compare, update to 3/3 when done
+     + Log member counts after each scan
+     + Update progress during comparison phase
+
+FILES MODIFIED:
+---------------
+  src/folder_compare.py
+    - _list_zip_members(): Added progress updates during scanning
+    - compare_archives(): Changed to 3-phase progress tracking
+    - Enhanced logging for each phase
+
+WHAT YOU'LL SEE NOW:
+--------------------
+
+Instead of stuck at "0 / 1", you'll see:
+
+PHASE 1 (Archive 1 Scanning):
+┌─────────────────────────────────────────────────────────────┐
+│ Comparison in Progress...                                   │
+│                                                              │
+│ [=====>                    ] 33.3%                          │
+│                                                              │
+│ Status: Running...                                          │
+│ Files processed: 0 / 3                                      │
+│ Current file: Scanning lightsaber.zip: 1523/5000 entries   │
+│ Estimated time remaining: Calculating...                    │
+└─────────────────────────────────────────────────────────────┘
+
+Console: "Scanning archive 1: lightsaber.zip"
+
+PHASE 2 (Archive 2 Scanning):
+┌─────────────────────────────────────────────────────────────┐
+│ Comparison in Progress...                                   │
+│                                                              │
+│ [===========>              ] 66.7%                          │
+│                                                              │
+│ Status: Running...                                          │
+│ Files processed: 1 / 3                                      │
+│ Current file: Scanning lightsaber.zip: 2341/4987 entries   │
+│ Estimated time remaining: 2m 15s                            │
+└─────────────────────────────────────────────────────────────┘
+
+Console: "Found 5000 members in archive 1"
+Console: "Scanning archive 2: lightsaber.zip"
+
+PHASE 3 (Comparison):
+┌─────────────────────────────────────────────────────────────┐
+│ Comparison in Progress...                                   │
+│                                                              │
+│ [===================>      ] 95%                            │
+│                                                              │
+│ Status: Running...                                          │
+│ Files processed: 2 / 3                                      │
+│ Current file: Phase 3/3: Comparing 4750/4987 common files  │
+│ Estimated time remaining: 15s                               │
+└─────────────────────────────────────────────────────────────┘
+
+Console: "Found 4987 members in archive 2"
+Console: "Comparing archive contents with normalization"
+
+COMPLETE:
+┌─────────────────────────────────────────────────────────────┐
+│ Comparison in Progress...                                   │
+│                                                              │
+│ [=======================>  ] 100%                           │
+│                                                              │
+│ Status: Complete!                                           │
+│ Files processed: 3 / 3                                      │
+│ Current file: Comparison complete!                          │
+└─────────────────────────────────────────────────────────────┘
+
+Console: "Direct archive-to-archive comparison completed"
+
+BENEFITS:
+---------
+✓ No more "stuck" appearance - shows active progress
+✓ See exactly what phase the comparison is in
+✓ Entry count shows scanning is working (even if slow)
+✓ ETA appears after Phase 1 completes
+✓ Know when it's processing nested JARs (which is slow)
+✓ Progress bar moves smoothly through 33% → 67% → 100%
+✓ Console logs provide detailed feedback
+
+PERFORMANCE EXPECTATIONS:
+--------------------------
+
+For large archives like lightsaber.zip:
+
+Phase 1 & 2 (Scanning): 
+  - Time depends on archive size and nested depth
+  - Large ZIP with many nested JARs: 5-30 minutes each
+  - Network path: Add 2-5x time
+  - Progress updates every 100 entries keep you informed
+
+Phase 3 (Comparison):
+  - Usually fast (just comparing metadata)
+  - Updates every 100 files
+  - Typically completes in < 1 minute
+
+Total time example:
+  - Small archive (100 files): < 1 minute
+  - Medium archive (1000 files): 2-5 minutes
+  - Large archive (5000+ files): 10-30 minutes
+  - Very large with deep nesting: 30-60 minutes
+
+TIPS FOR FASTER COMPARISON:
+----------------------------
+
+1. Use --use-local-copy for network paths:
+   py main.py --custom-folders --archives --use-local-copy ^
+     --folder1 "\\RAAISILON\..." ^
+     --folder2 "\\RAAISILON\..."
+   
+   This copies to local temp first (much faster scanning).
+
+2. Skip deep nested scanning if not needed:
+   Set deep_nested_archives = False in ArchiveContentsComparer
+   (This scans only top-level files, not nested JARs)
+
+3. Use web UI to see real-time progress:
+   py builtin_server.py --host 0.0.0.0 --port 5000
+   Open http://localhost:5000
+   Watch the progress bar update in real-time!
+
+CONSOLE OUTPUT EXAMPLE:
+-----------------------
+When running from command line:
+
+2025-11-24 10:30:00 - INFO - Comparing archive contents: lightsaber.zip vs lightsaber.zip
+2025-11-24 10:30:01 - INFO - Scanning archive 1: lightsaber.zip
+2025-11-24 10:32:15 - INFO - Found 5234 members in archive 1
+2025-11-24 10:32:15 - INFO - Scanning archive 2: lightsaber.zip
+2025-11-24 10:34:28 - INFO - Found 5187 members in archive 2
+2025-11-24 10:34:28 - INFO - Comparing archive contents with normalization
+2025-11-24 10:34:45 - INFO - Direct archive-to-archive comparison completed
+
+TROUBLESHOOTING:
+----------------
+
+Q: Progress still shows "Calculating..." for ETA?
+A: Normal for Phase 1. ETA will appear after Phase 1 completes
+   (need at least one phase done to estimate).
+
+Q: "Scanning" phase takes very long?
+A: Large archives with deep nesting are slow. Progress updates every 100
+   entries show it's working. Consider --use-local-copy for network paths.
+
+Q: Stuck on "Processing nested archive: ..."?
+A: Large nested JAR is being scanned. This can take minutes for big JARs.
+   Progress will resume after nested archive completes.
+
+Q: Want to skip nested scanning?
+A: Not exposed in UI yet. For now, nested scanning is always enabled for
+   thorough comparison. Future: Add --shallow-scan option.
+
+TESTING YOUR COMPARISON:
+------------------------
+
+Option 1 - Web UI (RECOMMENDED - see real-time progress):
+  py builtin_server.py --host 0.0.0.0 --port 5000
+  # Open http://localhost:5000
+  # Select "Archive Contents" mode
+  # Enter your lightsaber.zip paths
+  # Click "Run comparison"
+  # Watch the 3-phase progress!
+
+Option 2 - Command line:
+  py main.py --custom-folders --archives ^
+    --folder1 "\\RAAISILON\cmprod\pbg\cmbuild\LS\v1000_PMX102_1\10.0.0.0.0\Daily\BN212\lightsaber.zip" ^
+    --folder2 "\\RAAISILON\cmprod\pbg\cmbuild\LS\v1000_PMX102_1\10.0.0.0.0\Daily\BN210\lightsaber.zip"
+
+Option 3 - With local copy (faster):
+  py main.py --custom-folders --archives --use-local-copy ^
+    --folder1 "\\RAAISILON\..." ^
+    --folder2 "\\RAAISILON\..."
+
+WHAT CHANGED FROM USER PERSPECTIVE:
+------------------------------------
+
+BEFORE:
+  Files processed: 0 / 1
+  [... minutes pass ...]
+  Still: 0 / 1
+  [... more minutes ...]
+  Still: 0 / 1
+  [USER THINKS IT'S STUCK]
+  [... finally ...]
+  Files processed: 1 / 1
+  Done!
+
+AFTER:
+  Files processed: 0 / 3
+  Current: Scanning lightsaber.zip: 100/5000 entries
+  [Progress bar: 10%]
+  
+  Files processed: 0 / 3
+  Current: Scanning lightsaber.zip: 500/5000 entries
+  [Progress bar: 20%]
+  
+  Files processed: 1 / 3  
+  Current: Phase 2/3: Scanning lightsaber.zip...
+  [Progress bar: 40%]
+  
+  Files processed: 2 / 3
+  Current: Phase 3/3: Comparing 1000/4987 common files
+  [Progress bar: 80%]
+  
+  Files processed: 3 / 3
+  Current: Comparison complete!
+  [Progress bar: 100%]
+
+USER SEES CONTINUOUS PROGRESS - NO MORE CONFUSION!
+
+================================================================================
+STATUS: FIXED AND READY TO TEST ✓
+================================================================================
+
+Your lightsaber.zip comparison will now show detailed 3-phase progress with
+entry counts and current operations. No more wondering if it's stuck!
+
+The progress bar will update continuously showing:
+  - Which archive is being scanned
+  - How many entries have been processed
+  - When it's comparing contents
+  - Estimated time remaining (after Phase 1)
+
+TRY IT NOW! 🚀
+

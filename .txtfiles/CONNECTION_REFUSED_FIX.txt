@@ -1,0 +1,169 @@
+═══════════════════════════════════════════════════════════════════════════
+FIX: UI REFUSED TO CONNECT
+═══════════════════════════════════════════════════════════════════════════
+
+ERROR: "Connection refused" or "Unable to connect"
+
+This means the server isn't running or network is blocking it.
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 STEP 1: CHECK IF SERVER IS RUNNING
+═══════════════════════════════════════════════════════════════════════════
+
+Look at your command prompt window where you ran the command.
+
+Do you see this?
+✓ Built-in server running at http://10.19.164.180:8080
+
+YES → Server is running, go to Step 2
+NO  → Server failed to start, see Step 3
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 STEP 2: TEST LOCALHOST FIRST
+═══════════════════════════════════════════════════════════════════════════
+
+Close the current server (Ctrl+C) and run:
+
+> py builtin_server.py --host 127.0.0.1 --port 8080 --skip-demos
+
+Then open browser to: http://127.0.0.1:8080
+
+WORKS? → Network/firewall issue, see Step 4
+DOESN'T WORK? → Server issue, see Step 3
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 STEP 3: SERVER WON'T START
+═══════════════════════════════════════════════════════════════════════════
+
+A. CHECK FOR PORT CONFLICTS
+
+Run this command to see if port is already in use:
+> netstat -ano | findstr "8080"
+
+If you see output:
+  TCP    0.0.0.0:8080    0.0.0.0:0    LISTENING    12345
+
+→ Port is in use! Use a different port:
+> py builtin_server.py --host 10.19.164.180 --port 8081 --skip-demos
+
+B. CHECK PYTHON ERRORS
+
+Look at the console output. Do you see any Python errors?
+Copy the error and we can fix it.
+
+C. TRY PORT 5000 INSTEAD
+
+> py builtin_server.py --host 10.19.164.180 --port 5000 --skip-demos
+
+═══════════════════════════════════════════════════════════════════════════
+🔍 STEP 4: NETWORK/FIREWALL ISSUE
+═══════════════════════════════════════════════════════════════════════════
+
+If localhost works but IP doesn't:
+
+A. BIND TO ALL INTERFACES
+
+Stop server (Ctrl+C) and run:
+> py builtin_server.py --host 0.0.0.0 --port 8080 --skip-demos
+
+This listens on ALL network interfaces.
+Then try: http://10.19.164.180:8080
+
+B. CHECK WINDOWS FIREWALL
+
+1. Open Windows Firewall
+2. Click "Allow an app through firewall"
+3. Find Python or py.exe
+4. Make sure both Private and Public are checked
+
+C. TRY FROM SAME MACHINE FIRST
+
+On the server machine itself, open browser to:
+http://10.19.164.180:8080
+
+WORKS locally but not from other machines?
+→ Firewall is blocking external connections
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 1: USE 0.0.0.0 (MOST COMMON FIX)
+═══════════════════════════════════════════════════════════════════════════
+
+Instead of specific IP, bind to all:
+
+> py builtin_server.py --host 0.0.0.0 --port 8080 --skip-demos
+
+Then access from any machine:
+http://10.19.164.180:8080
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 2: USE LOCALHOST FOR NOW
+═══════════════════════════════════════════════════════════════════════════
+
+If you're working on the same machine:
+
+> py builtin_server.py --host 127.0.0.1 --port 8080 --skip-demos
+
+Access: http://127.0.0.1:8080
+
+═══════════════════════════════════════════════════════════════════════════
+✅ SOLUTION 3: DIFFERENT PORT
+═══════════════════════════════════════════════════════════════════════════
+
+Port 8080 might be blocked:
+
+> py builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+
+Access: http://10.19.164.180:5000
+
+═══════════════════════════════════════════════════════════════════════════
+🐛 DEBUGGING COMMANDS
+═══════════════════════════════════════════════════════════════════════════
+
+1. CHECK IF PORT IS IN USE:
+> netstat -ano | findstr "8080"
+
+2. CHECK IF SERVER IS LISTENING:
+> netstat -ano | findstr "LISTENING"
+
+3. TEST WITH CURL (if installed):
+> curl http://127.0.0.1:8080
+
+4. PING THE IP:
+> ping 10.19.164.180
+
+═══════════════════════════════════════════════════════════════════════════
+📋 QUICK CHECKLIST
+═══════════════════════════════════════════════════════════════════════════
+
+□ Server shows "Built-in server running" message
+□ No error messages in console
+□ Port is not in use by another application
+□ Windows Firewall allows Python
+□ You're using correct IP address
+□ Port number matches (8080)
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 TRY THESE IN ORDER
+═══════════════════════════════════════════════════════════════════════════
+
+1. TRY: py builtin_server.py --host 0.0.0.0 --port 8080 --skip-demos
+   ACCESS: http://10.19.164.180:8080
+
+2. TRY: py builtin_server.py --host 127.0.0.1 --port 8080 --skip-demos
+   ACCESS: http://127.0.0.1:8080
+
+3. TRY: py builtin_server.py --host 0.0.0.0 --port 5000 --skip-demos
+   ACCESS: http://10.19.164.180:5000
+
+═══════════════════════════════════════════════════════════════════════════
+❓ STILL NOT WORKING?
+═══════════════════════════════════════════════════════════════════════════
+
+Tell me:
+1. What do you see in the console when you run the command?
+2. Do you see "Built-in server running" message?
+3. Are you accessing from same machine or different machine?
+4. What's the exact error in the browser?
+
+═══════════════════════════════════════════════════════════════════════════
+

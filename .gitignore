@@ -1,0 +1,78 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+build_installer/
+release_staging/
+_setup_test/
+
+# Secrets and local TLS
+.env
+.env.*
+.ssl/
+*.pem
+*.key
+!scripts/**/*.md
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+
+# OneDrive conflict duplicates
+*-SVINAYAK01.*
+
+# Offline wheel caches (re-download with download_*.ps1 / install scripts)
+flask_wheels/
+paramiko_wheels/
+
+# Runtime / temp
+temp_compare/
+tmp_cfr_diff/
+logs/
+*.log
+server_startup_log.txt
+server_test_out.txt
+
+# Generated comparison reports (re-created on each run)
+*_report_*.html
+*_report_*.txt
+*_comparison_*.html
+*_comparison_*.txt
+archive_naming_report*
+ascf_archives_report*
+ascf_naming_convention_report*
+ascf_patch_comparison*
+dex_patch_comparison*
+crm_patch_comparison*
+crm_full_comparison*
+crm_sdk_comparison*
+uxf_patch_comparison*
+environment_jar_validation*
+tmp_smoke*
+tmp_verify*
+temp_compare_report*
+path_test*.txt
+last_run.txt
+status.txt
+test_response.txt
+fast_archive_comparison.txt
+TABLE_VIEW_EXAMPLE.html
+
+# Scratch / temp files
+_t1
+_t2
+*.tmp
+
+# Large generated / binary artifacts
+*.pptx
+*.pdf

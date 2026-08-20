@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 10 — Review JAR class diff section</title>
+  <style>
+    body { font-family: Consolas, Segoe UI, system-ui, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+    .header { background: linear-gradient(90deg,#1e40af,#3b82f6); color: #fff; padding: 18px 22px; font-family: Segoe UI, sans-serif; }
+    .wrap { max-width: 1100px; margin: 16px auto; padding: 0 16px 24px; }
+    .card { background: #fff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; font-family: Segoe UI, sans-serif; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: Segoe UI, sans-serif; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+    th { background: linear-gradient(135deg,#1e40af,#3b82f6); color: #fff; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 11px; overflow: auto; margin: 10px 0 0; }
+    .add { color: #4ade80; } .del { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="margin:0;font-size:20px;">☕ JAR class file diff (optional) — summary</h1>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="step">Step 10</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Resolved JAR / query</th>
+            <th>Modified .class</th>
+            <th>Java diffs</th>
+            <th>Section</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ClfyBillingManager.jar</td>
+            <td>3</td>
+            <td>3</td>
+            <td><a href="#" style="color:#2563eb;">Open</a></td>
+          </tr>
+          <tr>
+            <td>ClfyCore.jar</td>
+            <td>1</td>
+            <td>1</td>
+            <td><a href="#" style="color:#2563eb;">Open</a></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-family:Segoe UI,sans-serif;font-size:12px;color:#64748b;margin:10px 0 0;">
+        <strong>Java source differences — Perforce-style unified diff</strong> (4 total)
+      </p>
+      <pre><span class="del">--- com/amdocs/crm/billing/InvoiceService.java (old)</span>
+<span class="add">+++ com/amdocs/crm/billing/InvoiceService.java (new)</span>
+@@ -142,7 +142,7 @@
+-    private static final String VERSION = "10.24.1.0.52";
++    private static final String VERSION = "10.24.1.0.68";</pre>
+    </div>
+  </div>
+</body>
+</html>

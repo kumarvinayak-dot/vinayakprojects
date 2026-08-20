@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reports</title>
+    <style>
+      :root { --accent:#0d6efd; --bg:#f6f7fb; --bg2:#eef2ff; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #6366f1 0%, #0ea5e9 50%, #22c55e 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      ul { padding-left: 18px; margin: 8px 0 0 0; }
+      small { color: var(--muted); }
+      .back { color:#fff; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Comparison reports</h2>
+        <a class="back" href="{{ url_for('index') }}">← Back</a>
+      </div>
+      <div class="card">
+        <p style="margin:0 0 12px 0;color:var(--muted);font-size:14px;">Latest 30 reports on your PC (<code>\\&lt;host&gt;\c$\crm_compare_reports</code>), named by date and run order (first_report, second_report, …). Reports stay until you delete them.</p>
+        {% if files %}
+          <ul>
+            {% for item in files %}
+              <li>
+                <a href="{{ url_for('view_report', filename=item.open_name) }}{% if item.open_name.startswith('crm_full_comparison_') and item.open_name.endswith('.html') %}#class-level-details{% endif %}" target="_blank" rel="noopener noreferrer">{{ item.open_name }}</a>
+                <small> — saved {{ item.mtime }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No reports found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+  </html>
+
+
+
+
+
+

@@ -1,0 +1,208 @@
+================================================================================
+PROGRESS TRACKING AND TIMEOUT HANDLING - FEATURE SUMMARY
+================================================================================
+
+WHAT WAS ADDED:
+
+1. REAL-TIME PROGRESS BAR IN WEB UI
+   - Visual progress bar showing % completion
+   - Files processed count (e.g., "1508 / 2000")
+   - Current file being compared
+   - Estimated time remaining (dynamically calculated)
+   - Auto-scrolls to keep progress visible
+
+2. AUTOMATIC TIMEOUT HANDLING
+   - Overall comparison timeout: 2 hours default
+   - Per-file timeout: 10 minutes default
+   - Configurable via FolderComparer properties
+   - Generates partial report before exiting on timeout
+
+3. ERROR REPORTING IN COMPARISON REPORTS
+   - Report header shows comparison status: "COMPLETE" or "INCOMPLETE/ERROR"
+   - Error messages included in report
+   - Files processed count before error
+   - Clear note that report is partial
+
+4. NETWORK ERROR RESILIENCE
+   - Automatic retry on network errors
+   - Network connectivity checks before operations
+   - Graceful exit with report generation on network failure
+
+5. PROGRESS API ENDPOINT
+   - `/progress` endpoint returns JSON with current status
+   - Updates every second
+   - Provides all progress information to UI
+
+================================================================================
+FILES MODIFIED:
+================================================================================
+
+1. src/folder_compare.py
+   - Added progress tracking properties:
+     * total_files
+     * processed_files
+     * current_file
+     * progress_percentage
+     * estimated_time_remaining
+     * comparison_error
+     * comparison_timeout (configurable)
+     * file_timeout (configurable)
+   
+   - Added _update_progress() method
+   - Added timeout checks in compare_folders() loop
+   - Modified generate_report() to include error status
+   - Added try/except/finally for error handling
+
+2. builtin_server.py
+   - Added global comparison_progress dictionary
+   - Added /progress endpoint for JSON status
+   - Updated /run endpoint to track comparer instance
+   - Added progress bar HTML in index page
+   - Added JavaScript for real-time progress updates
+   - Added error handling in comparison execution
+
+================================================================================
+HOW TO USE:
+================================================================================
+
+WEB UI:
+1. Start the server:
+   .\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 5000
+
+2. Open browser: http://localhost:5000
+
+3. Enter folder paths and click "Run comparison"
+
+4. Progress bar appears automatically showing:
+   - Percentage complete
+   - Files processed
+   - Current file
+   - Estimated time remaining
+
+5. If error occurs:
+   - Error message displays in red box
+   - Partial report is generated
+   - Report includes error details
+
+COMMAND LINE:
+python main.py compare "folder1" "folder2" -m full
+
+Progress logged to console:
+  Progress: 100/2000 files processed (5.0%) - ETA: 450s
+
+================================================================================
+CUSTOMIZING TIMEOUTS:
+================================================================================
+
+In Python code:
+
+from folder_compare import FolderComparer
+
+comparer = FolderComparer(folder1, folder2)
+comparer.comparison_timeout = 3600  # 1 hour overall
+comparer.file_timeout = 300  # 5 minutes per file
+results = comparer.compare_folders()
+
+================================================================================
+ERROR HANDLING SCENARIOS:
+================================================================================
+
+1. TIMEOUT SCENARIO:
+   - Comparison takes >2 hours
+   - Tool stops comparison
+   - Generates partial report with error:
+     "Error: Comparison timeout after 7200 seconds"
+     "Files processed before error: 1508/2000"
+
+2. FILE STUCK SCENARIO:
+   - Single file takes >10 minutes
+   - Tool logs error for that file
+   - Continues to next file
+   - Report includes timeout info
+
+3. NETWORK ERROR SCENARIO:
+   - Network path becomes unavailable
+   - Tool retries 3 times
+   - If all fail, generates partial report
+   - Report includes network error details
+
+4. KEYBOARD INTERRUPT:
+   - User presses Ctrl+C
+   - Tool catches interrupt
+   - Generates partial report
+   - Report shows "interrupted by user"
+
+================================================================================
+PROGRESS BAR EXAMPLE:
+================================================================================
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Comparison in Progress...                                         │
+│                                                                    │
+│ [====================>                ] 75.3%                     │
+│                                                                    │
+│ Status: Running...                                                │
+│ Files processed: 1508 / 2000                                      │
+│ Current file: path/to/module/some_file.jar                       │
+│ Estimated time remaining: 2m 15s                                  │
+└───────────────────────────────────────────────────────────────────┘
+
+================================================================================
+COMPARISON REPORT WITH ERROR:
+================================================================================
+
+================================================================================
+FOLDER COMPARISON REPORT
+================================================================================
+Folder 1: \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf06
+Folder 2: \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf07
+Comparison Date: 2025-11-24 15:30:45
+
+*** COMPARISON STATUS: INCOMPLETE/ERROR ***
+Error: Comparison timeout after 7200 seconds
+Files processed before error: 1508/2000
+Note: This is a PARTIAL report with results up to the point of error
+
+Summary:
+  Total files compared: 1508
+  Files only in folder 1: 25
+  Files only in folder 2: 18
+  Files with differences: 142
+  Files identical: 1323
+  
+[... rest of partial results ...]
+
+================================================================================
+TESTING:
+================================================================================
+
+1. Test progress bar:
+   - Run comparison through web UI
+   - Verify progress bar appears
+   - Verify ETA updates
+   - Verify file count increments
+
+2. Test timeout:
+   - Set short timeout:
+     comparer.comparison_timeout = 60  # 1 minute
+   - Run long comparison
+   - Verify partial report generated
+
+3. Test error handling:
+   - Use invalid network path
+   - Verify error message in report
+   - Verify partial report saved
+
+================================================================================
+BENEFITS:
+================================================================================
+
+✅ User knows comparison progress and isn't left wondering
+✅ Accurate time estimates help planning
+✅ No more "stuck" comparisons - auto-timeout with partial results
+✅ Network errors don't lose all work - partial report saved
+✅ Error messages clearly explain what went wrong
+✅ Professional UI experience with real-time updates
+
+================================================================================
+

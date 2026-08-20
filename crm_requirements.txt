@@ -1,0 +1,22 @@
+CRM ORDER MANAGEMENT - REQUIREMENTS SPECIFICATION
+
+1. ORDER CREATION
+The system shall allow a customer service representative to create a new order for a customer. Each order must have a unique order ID, a customer account reference, at least one product line item, and an order status of "New". The system must validate that the customer account is active before allowing order creation. Orders for suspended or closed accounts must be rejected with a clear error message.
+
+2. ORDER MODIFICATION
+An order in "New" or "Pending" status may be modified. Users may add or remove product line items, change quantities, or update delivery details. Orders in "Provisioning", "Completed", or "Cancelled" status must not be editable. Any modification must be logged with a timestamp and the user ID who made the change.
+
+3. ORDER CANCELLATION
+A customer may cancel an order while it is in "New" or "Pending" status. Cancellation of an order in "Provisioning" status requires supervisor approval. Once cancelled, the order status changes to "Cancelled" and no charges shall be applied to the customer account. Orders already in "Completed" status cannot be cancelled and must instead follow the returns process.
+
+4. PLAN UPGRADE AND PRORATION
+When a customer upgrades from a lower plan to a higher plan mid-billing-cycle, the system shall calculate a prorated charge for the remaining days in the cycle. The proration formula is: (new plan price - old plan price) multiplied by (remaining days / total days in cycle). The prorated amount must appear on the next invoice with a clear description.
+
+5. PROVISIONING INTEGRATION
+When an order is submitted, the system sends a provisioning request to the downstream provisioning system. If the provisioning system is unavailable, the order must be held in "Pending" status and retried automatically every 15 minutes for up to 4 hours. No charge shall be applied until provisioning succeeds. If provisioning fails after all retries, the order is flagged for manual review.
+
+6. BILLING AND CHARGING
+Charges are only applied once an order reaches "Completed" status. The billing system must receive the order details, apply the correct rate plan, calculate taxes based on the customer's location, and generate an invoice line item. Duplicate charges for the same order must be prevented by an idempotency check on the order ID.
+
+7. DATA VALIDATION
+All meter readings and usage records ingested into the system must be validated: no negative values, no readings dated in the future, and no duplicate readings for the same meter and timestamp. Records failing validation are quarantined for manual review and must not flow to billing.

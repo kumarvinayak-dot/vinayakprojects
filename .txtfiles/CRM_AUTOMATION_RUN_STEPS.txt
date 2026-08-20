@@ -1,0 +1,114 @@
+CRM Application — Automation Run Steps (After Receiving New Build Path)
+
+================================================================================
+
+ILLUSTRATED RUNBOOK (screenshots embedded — open from any folder)
+
+  Double-click or open in browser:  docs\CRM_AUTOMATION_RUNBOOK.html
+
+  Also at project root after clone:   CRM_AUTOMATION_RUN_STEPS.txt (this file)
+
+  Screenshots are built into the HTML file (no separate image folder needed).
+
+  Regenerate (developers):
+    powershell -Sta -ExecutionPolicy Bypass -File scripts\capture_crm_runbook.ps1
+    python scripts\build_crm_automation_runbook_html.py
+
+================================================================================
+
+CURRENT RELEASE (example — v10.24.1_67 vs v10.24.1_68)
+
+  Old build (_67): \\dvciisilon02\cm_share2\v10.24.1\v10.24.1_67\SDK\Output\SDK_CRM_10.24.1.0_linux64_20260508_1421.jar
+  New build (_68): \\dvciisilon02\cm_share2\v10.24.1\v10.24.1_68\SDK\Output\SDK_CRM_10.24.1.0_linux64_20260608_0939.jar
+  CRM version: 10.24.1  |  Bundle: v10.24.1_67 → v10.24.1_68
+
+================================================================================
+
+NEW FEATURES (Comparison Tool — CRM/AMSS)
+
+  Install / daily use
+    - Comparison Tool.zip → INSTALL.cmd (one time) → launch_comparison_tool.bat (daily)
+    - Single URL for all apps: http://localhost:5000/crm
+
+  Home page — CRM/AMSS optional panel
+    - Fast CRM/AMSS full compare (default on) — faster SDK tree scan
+    - Compare ClfyAgent .zip/.ear — size-only nested JAR/WAR/EAR in SDK
+    - JAR names for manifest diff — Implementation-Version table in report
+    - JAR names for class diff — decompiled Java diffs (optional C:\cfr-0.152.jar)
+    - Find JAR for class — SSH grep on deployment (uses Environment Validation credentials)
+    - crm-playbooks Nexus TAR — compare amdocs-version/*.yaml between Nexus versions
+    - File patterns for text/config diffs — limit config diff section in HTML report
+    - Explicit file sizes to compare — force size rows for named archives
+
+  HTML report — enhanced sections
+    - At a glance summary for the run
+    - Side-by-side Old vs New counts (release-folder path alignment)
+    - Version-changed JARs — blue Beyond Compare style; one row per logical JAR
+    - Missing JARs (one side only) — true orphans; CRM_10.24 ↔ CRM_10.25 path mapping
+    - ClfyAgent nested container table — version mismatch (blue) / missing (red-green)
+    - Major size diffs when |% change| >= 10%
+    - Path count mismatch — only true one-side orphans (not release renames)
+
+  Environment validation
+    - SSH to Linux host; validate JAR Implementation-Version on deployment
+    - Find JAR for class shares the same SSH host/user/password/path
+
+  Related: docs\CRM_BUILD_VERIFICATION_RUNBOOK.html — manifest & class diff focus
+
+================================================================================
+
+ONE-LINE STEPS
+
+ 1. Open the received new CRM build UNC path in Windows Explorer and confirm you have read access.
+
+ 2. Note the previous bundle CRM build UNC path to use as the Old build baseline for comparison.
+
+ 3. Double-click launch_comparison_tool.bat (or start_server.bat) in the Comparison Tool install folder to start the tool on localhost.
+
+ 4. Open http://localhost:5000/crm in Chrome or Edge when the browser does not open automatically.
+
+ 5. Check the Build Comparison checkbox on the home page.
+
+ 6. Check the CRM/AMSS application checkbox only (do not select ASCF, UXF/OMNI, or DEX).
+
+ 7. Paste the previous bundle SDK JAR path into the Old build field.
+
+ 8. Paste the received new CRM SDK JAR path into the New build field.
+
+ 9. Optionally click Load CRM base paths and use Use as Old / Use as New to pick paths from the version table.
+
+10. Configure CRM mode: Fast CRM/AMSS full compare (recommended), optional Compare ClfyAgent, and optional manifest/class diff or crm-playbooks Nexus fields in the CRM/AMSS optional panel.
+
+11. Click Run comparison and allow the progress tab to open (enable pop-ups if blocked). For Nexus-only crm-playbooks checks, fill Nexus versions and leave Old/New build empty.
+
+12. Watch Console Output until the comparison finishes and the HTML report opens automatically.
+
+13. Review the report: At a glance, side-by-side summary, Version-changed JARs (blue), Missing JARs, ClfyAgent nested table, major size alerts (>=10%), and aligned path/JAR mismatch details.
+
+14. Save or share the HTML report from \\YOUR-PC\c$\crm_compare_reports if sign-off or audit is required.
+
+15. Optionally enable Environment Validation (SSH host, user, password, remote path). Use Find JAR for class to locate a Java class on the server, then Use in class diff to add the JAR to the class-diff list.
+
+16. Run STOP_SERVER.bat in the install folder when verification is complete.
+
+================================================================================
+
+QUICK REFERENCE
+
+  Install once:  Comparison Tool.zip → INSTALL.cmd  (see INSTALL_INSTRUCTIONS.html)
+
+  Daily start:   launch_comparison_tool.bat  or  start_server.bat
+
+  Tool URL:      http://localhost:5000/crm  |  HTTPS: https://localhost:5443/crm
+
+  Stop server:   STOP_SERVER.bat
+
+  Reports:       \\YOUR-PC\c$\crm_compare_reports
+
+  Temp files:    \\YOUR-PC\c$\crm_compare_temp
+
+  Full runbook:  docs\CRM_AUTOMATION_RUNBOOK.html  (embedded screenshots)
+
+  Manifest/class: docs\CRM_BUILD_VERIFICATION_RUNBOOK.html
+
+================================================================================

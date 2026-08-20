@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Update Index.html</title>
+    <style>
+      :root { --accent:#f59e0b; --bg:#f6f7fb; --bg2:#fefce8; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .card-yellow { background:#fefce8; border:1px solid #f59e0b; }
+      select, input[type="text"] { width:100%; padding:10px 12px; border:1px solid #f59e0b; border-radius:8px; background:#fff; font-size:14px; box-sizing:border-box; }
+      select { cursor:pointer; }
+      select:focus, input[type="text"]:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); outline:none; }
+      label { display:block; font-weight:600; margin-bottom:8px; color:#b45309; }
+      button { background:linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; }
+      button:hover { filter: brightness(1.05); }
+      small { color: #92400e; display:block; margin-top:4px; }
+      code { background:#fffbeb; padding:2px 6px; border-radius:4px; font-size:13px; }
+      .back { color:#fff; }
+      .info-box { background:#fff; border:1px solid #fcd34d; border-radius:8px; padding:15px; margin-top:15px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Update Index.html</h2>
+        <a class="back" href="{{ url_for('foundations') }}">← Back to Foundations</a>
+      </div>
+      
+      <div class="card card-yellow">
+        <h3 style="color:#d97706; margin-top:0;">📝 Update Index.html Automatically</h3>
+        <p style="color:#92400e;">This will automatically add a new hotfix entry to the index.html file in the ReleaseNotes folder.</p>
+        
+        <form method="post" action="{{ url_for('foundations_update_index') }}">
+          <div style="margin-bottom:15px;">
+            <label>ASCF Product Version</label>
+            <select name="ascf_version" required>
+              <option value="">-- Select ASCF Product Version --</option>
+              <option value="10.25.0.pb00">10.25.0.pb00</option>
+              <option value="10.24.0.pb01">10.24.0.pb01</option>
+              <option value="10.24.0.pb00">10.24.0.pb00</option>
+              <option value="10.1.0.pb01">10.1.0.pb01</option>
+              <option value="10.1.0.pb00">10.1.0.pb00</option>
+              <option value="9.22.0.pb01">9.22.0.pb01</option>
+              <option value="9.22.0.pb00">9.22.0.pb00</option>
+              <option value="9.3.0.pb01">9.3.0.pb01</option>
+              <option value="9.0.0.pb05">9.0.0.pb05</option>
+              <option value="9.0.0.pb04">9.0.0.pb04</option>
+              <option value="9.0.0.pb03">9.0.0.pb03</option>
+              <option value="9.0.0.pb02">9.0.0.pb02</option>
+              <option value="9.0.0.pb01">9.0.0.pb01</option>
+              <option value="9.0.0.pb00">9.0.0.pb00</option>
+              <option value="8.2.0.pb01">8.2.0.pb01</option>
+              <option value="8.2.0.pb02">8.2.0.pb02</option>
+              <option value="8.2.0.pb03">8.2.0.pb03</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>New HF Number</label>
+            <input type="text" name="hf_number" required placeholder="Enter new HF number (e.g., 09)" pattern="[0-9]{2}" title="Please enter a 2-digit HF number" />
+            <small>The previous HF entry will be found automatically and new entry added below it.</small>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>Month</label>
+            <select name="month" required>
+              <option value="">-- Select Month --</option>
+              <option value="Jan">Jan</option>
+              <option value="Feb">Feb</option>
+              <option value="Mar">Mar</option>
+              <option value="Apr">Apr</option>
+              <option value="May">May</option>
+              <option value="Jun">Jun</option>
+              <option value="Jul">Jul</option>
+              <option value="Aug">Aug</option>
+              <option value="Sep">Sep</option>
+              <option value="Oct">Oct</option>
+              <option value="Nov">Nov</option>
+              <option value="Dec">Dec</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <label>Year</label>
+            <input type="text" name="year" required placeholder="Enter year (e.g., 2026)" pattern="[0-9]{4}" title="Please enter a 4-digit year" />
+          </div>
+          
+          <div style="margin-top:15px;">
+            <button type="submit">Update Index.html</button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="info-box">
+        <h4 style="color:#b45309; margin-top:0;">ℹ️ What this does:</h4>
+        <ul style="color:#92400e; margin:10px 0; padding-left:20px;">
+          <li>Opens index.html at <code>\\usstlfounds01\ascf\userguides\ReleaseNotes\index.html</code></li>
+          <li>Finds the previous HF entry (e.g., 10.24.0.pb01_hf08)</li>
+          <li>Adds the new HF entry below it (e.g., 10.24.0.pb01_hf09)</li>
+        </ul>
+      </div>
+      
+      <p style="margin-top:20px;"><a href="{{ url_for('foundations') }}">← Back to Foundations Link</a></p>
+    </div>
+  </body>
+</html>

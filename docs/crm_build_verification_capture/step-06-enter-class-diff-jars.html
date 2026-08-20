@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 6 — JAR names for class diff</title>
+  <style>
+    body { font-family: Segoe UI, system-ui, sans-serif; margin: 0; background: #f1f5f9; padding: 16px; }
+    .card { background: linear-gradient(135deg,#eff6ff 0%,#ecfeff 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 18px; max-width: 960px; margin: 0 auto; }
+    h3 { margin: 0 0 6px; color: #1e40af; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+    label { font-weight: 600; font-size: 13px; display: block; margin: 10px 0 6px; }
+    input { width: 100%; padding: 10px 12px; border: 2px solid #7c3aed; border-radius: 8px; font-size: 13px; font-family: Consolas, monospace; box-sizing: border-box; background: #fff; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; }
+    .hint { font-size: 12px; color: #64748b; margin-top: 10px; line-height: 1.5; }
+    .callout { background: #fff; border-left: 4px solid #7c3aed; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 6</div>
+    <h3>CRM/AMSS full — optional reports</h3>
+    <label>JAR names for class diff (comma-separated)</label>
+    <input value="ClfyBillingManager.jar, ClfyCore.jar" readonly />
+    <div class="callout">
+      Generates <strong>Perforce-style Java source diffs</strong> for .class changes inside the listed JARs (decompiled old vs new).
+    </div>
+    <p class="hint">Enter one or more JAR names separated by commas. The report includes a summary table and expandable diff sections.</p>
+  </div>
+</body>
+</html>

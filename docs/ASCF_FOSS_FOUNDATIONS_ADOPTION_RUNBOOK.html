@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCF FOSS &amp; Foundations Adoption Runbook</title>
+  <style>
+    :root { --bg:#f1f5f9; --card:#fff; --text:#0f172a; --muted:#64748b; --accent:#059669; --border:#cbd5e1; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.55; }
+    header { background: linear-gradient(90deg,#065f46,#059669); color: #fff; padding: 28px 24px; }
+    header h1 { margin: 0 0 8px; font-size: 1.75rem; }
+    header p { margin: 0; opacity: .95; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+    .summary { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px; }
+    .summary table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .summary th, .summary td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; vertical-align: top; }
+    .summary th { background: #ecfdf5; width: 180px; }
+    code { background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-size: 12px; word-break: break-all; }
+    .part { font-size: 1.15rem; color: var(--accent); font-weight: 700; margin: 28px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #86efac; }
+    .step { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+    .step h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--accent); }
+    .step p { margin: 0 0 12px; }
+    .step img { width: 100%; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+    .meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 16px; }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ASCF FOSS &amp; Foundations Adoption Runbook</h1>
+    <p>Verify Foundation/FOSS JAR versions between ASCF builds, then publish the HF to the Foundation portal</p>
+  </header>
+  <main>
+    <section class="summary">
+      <h2 style="margin-top:0;">Adoption context</h2>
+      <table>
+        <tr><th>Purpose</th><td>Part 1: verify <strong>Foundation</strong> and <strong>FOSS</strong> JAR <code>Implementation-Version</code> adoption. Part 2: publish the HF on the <strong>Foundation site</strong>.</td></tr>
+        <tr><th>Old build (example)</th><td><code>\\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf09</code></td></tr>
+        <tr><th>New build (example)</th><td><code>\\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf10</code></td></tr>
+        <tr><th>ASCF version / HF</th><td><code>10.24.0.pb01</code> / HF <code>10</code></td></tr>
+        <tr><th>FOSS/Foundation mode</th><td>One JAR per comparison run — use Foundation product or Foss product dropdowns</td></tr>
+        <tr><th>Tool URL</th><td><code>http://localhost:5000/crm</code> (localhost only)</td></tr>
+      </table>
+    </section>
+
+    <div class="part">Part 1 — FOSS &amp; Foundation JAR verification</div>
+
+    <section class="step"><h2>Step 1</h2><p>Start the comparison tool (Desktop shortcut or <code>start_server.bat</code>) and open <code>http://localhost:5000/crm</code>.</p><img src="ascf_foss_foundations_screenshots/step-01-start-tool-and-open-crm.png" alt="Step 1" /></section>
+    <section class="step"><h2>Step 2</h2><p>Check the <strong>Build Comparison</strong> checkbox on the home page.</p><img src="ascf_foss_foundations_screenshots/step-02-enable-build-comparison.png" alt="Step 2" /></section>
+    <section class="step"><h2>Step 3</h2><p>Select <strong>ASCF</strong> only (do not select CRM/AMSS, UXF/OMNI, or DEX).</p><img src="ascf_foss_foundations_screenshots/step-03-select-ascf-application.png" alt="Step 3" /></section>
+    <section class="step"><h2>Step 4</h2><p>Enter the previous ASCF HF build path in <strong>Old build</strong> and the new ASCF HF build path in <strong>New build</strong>.</p><img src="ascf_foss_foundations_screenshots/step-04-enter-ascf-build-paths.png" alt="Step 4" /><p class="meta">Example: HF09 (old) → HF10 (new) on the ASCF release share.</p></section>
+    <section class="step"><h2>Step 5</h2><p>In ASCF comparison mode, select <strong>FOSS/Foundation (JAR Implementation-Version)</strong>.</p><img src="ascf_foss_foundations_screenshots/step-05-select-foss-foundation-mode.png" alt="Step 5" /></section>
+    <section class="step"><h2>Step 6</h2><p>For a Foundation JAR, choose <strong>Foundation product</strong> (e.g. Amdocs Core, Amdocs Security Manager) — the Jar name field fills automatically — or type the JAR name manually.</p><img src="ascf_foss_foundations_screenshots/step-06-select-foundation-product.png" alt="Step 6" /></section>
+    <section class="step"><h2>Step 7</h2><p>For a FOSS library, choose <strong>Foss product</strong> (e.g. log4j-core.jar, commons-io.jar) — the Jar name field fills automatically — or type the JAR name manually.</p><img src="ascf_foss_foundations_screenshots/step-07-select-foss-product.png" alt="Step 7" /></section>
+    <section class="step"><h2>Step 8</h2><p>Click <strong>Run comparison</strong> and wait for the FOSS/Foundation HTML report to open.</p><img src="ascf_foss_foundations_screenshots/step-08-run-comparison.png" alt="Step 8" /></section>
+    <section class="step"><h2>Step 9</h2><p>In the report, confirm <strong>Implementation-Version (old build)</strong> vs <strong>Implementation-Version (new build)</strong> and JAR paths match the expected adoption.</p><img src="ascf_foss_foundations_screenshots/step-09-review-foss-foundation-report.png" alt="Step 9" /></section>
+    <section class="step"><h2>Step 10</h2><p>Repeat steps 6–9 for each Foundation and FOSS JAR on your adoption checklist until all required libraries are verified.</p><img src="ascf_foss_foundations_screenshots/step-10-repeat-adoption-checklist.png" alt="Step 10" /></section>
+    <section class="step"><h2>Step 11</h2><p>Optionally enable <strong>Environment Validation</strong>, enter SSH host/user/password and the remote ASCF deployment path, and validate Foundation/FOSS JAR Implementation-Version on the target environment.</p><img src="ascf_foss_foundations_screenshots/step-11-environment-validation.png" alt="Step 11" /></section>
+
+    <div class="part">Part 2 — Foundations site adoption</div>
+
+    <section class="step"><h2>Step 12</h2><p>With ASCF selected on the home page, click <strong>Foundations Link</strong> at the bottom of the page.</p><img src="ascf_foss_foundations_screenshots/step-12-foundations-link.png" alt="Step 12" /></section>
+    <section class="step"><h2>Step 13</h2><p>In Step 1 (Prepare ASCF Foundation Link), select ASCF Product Version, enter the new HF number (2 digits), and click <strong>Prepare Foundation Link</strong>.</p><img src="ascf_foss_foundations_screenshots/step-13-prepare-foundation-link.png" alt="Step 13" /><p class="meta">Example: version <code>10.24.0.pb01</code>, HF <code>10</code>.</p></section>
+    <section class="step"><h2>Step 14</h2><p>Confirm the prepare result shows the new <code>download.html</code> was created from the previous HF template.</p><img src="ascf_foss_foundations_screenshots/step-14-confirm-prepare-result.png" alt="Step 14" /></section>
+    <section class="step"><h2>Step 15</h2><p>In Step 2 (Update Foundation Link), select the same ASCF Product Version, enter the current HF number, Month, Year, and ASCFDesignerUpdateSite creation date (<code>YYYYMMDD</code>), then click <strong>Update Foundation Link</strong>.</p><img src="ascf_foss_foundations_screenshots/step-15-update-foundation-link.png" alt="Step 15" /><p class="meta">Example: month <code>Jun</code>, year <code>2026</code>, creation date <code>20260609</code>.</p></section>
+    <section class="step"><h2>Step 16</h2><p>Click <strong>Update Index.html</strong>, enter ASCF version, HF number, month, and year, then submit and confirm the index file was updated.</p><img src="ascf_foss_foundations_screenshots/step-16-update-index-html.png" alt="Step 16" /></section>
+    <section class="step"><h2>Step 17</h2><p>Click <strong>Update Javadoc.html</strong>, enter ASCF Product Version and HF number, then submit and confirm the javadoc page was updated.</p><img src="ascf_foss_foundations_screenshots/step-17-update-javadoc-html.png" alt="Step 17" /></section>
+    <section class="step"><h2>Step 18</h2><p>Optionally click <strong>Update API manually</strong> and follow the on-screen links if API documentation must be updated for this HF.</p><img src="ascf_foss_foundations_screenshots/step-18-update-api-manually.png" alt="Step 18" /></section>
+    <section class="step"><h2>Step 19</h2><p>Return to the home page and click <strong>Administrative Tool</strong> (enabled when ASCF is selected).</p><img src="ascf_foss_foundations_screenshots/step-19-administrative-tool.png" alt="Step 19" /></section>
+    <section class="step"><h2>Step 20</h2><p>Enter New Hotfix Version (e.g. <code>10.24.0.pb01_hf10</code>), Release Date, Download URL, and Release Notes URL, then click <strong>Submit &amp; Launch Automation</strong>.</p><img src="ascf_foss_foundations_screenshots/step-20-submit-admin-tool.png" alt="Step 20" /></section>
+    <section class="step"><h2>Step 21</h2><p>In the opened Foundation admin browser window, verify the pre-filled hotfix form matches the new HF release details.</p><img src="ascf_foss_foundations_screenshots/step-21-verify-admin-form.png" alt="Step 21" /></section>
+    <section class="step"><h2>Step 22</h2><p>Click <strong>Add Hotfix</strong> to publish the release on the Foundation site and confirm the new HF appears in the ASCF hotfix list.</p><img src="ascf_foss_foundations_screenshots/step-22-confirm-hotfix-published.png" alt="Step 22" /></section>
+  </main>
+  <footer>
+    ASCF FOSS &amp; Foundations Adoption Runbook |
+    Plain-text: <a href="ASCF_FOSS_FOUNDATIONS_ADOPTION_ONE_LINE.txt">ASCF_FOSS_FOUNDATIONS_ADOPTION_ONE_LINE.txt</a> |
+    Full ASCF runbook: <a href="ASCF_AUTOMATION_RUNBOOK.html">ASCF_AUTOMATION_RUNBOOK.html</a>
+  </footer>
+</body>
+</html>

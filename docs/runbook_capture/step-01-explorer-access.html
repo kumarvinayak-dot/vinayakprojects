@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 1 — Verify New Build Path Access</title>
+  <style>
+    body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; background: #f3f3f3; color: #1f1f1f; }
+    .titlebar { background: #fff; border-bottom: 1px solid #ddd; padding: 8px 12px; font-size: 13px; }
+    .ribbon { background: #fff; padding: 8px 12px; border-bottom: 1px solid #e5e5e5; color: #444; font-size: 12px; }
+    .address { background: #fff; margin: 12px; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; font-size: 13px; }
+    .content { margin: 0 12px 12px; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; color: #0f5132; }
+    .ok { color: #0f5132; font-weight: 700; }
+    code { background: #eef2ff; padding: 2px 6px; border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    th, td { border-bottom: 1px solid #eee; text-align: left; padding: 6px 8px; }
+    th { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="titlebar">File Explorer — ASCF HF10 build verification</div>
+  <div class="ribbon">This PC &gt; INPNQASCFLB02 &gt; rel &gt; 10241 &gt; uif &gt; ASCF_HF_10240pb01hf10</div>
+  <div class="address">Address: <code>\\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf10</code></div>
+  <div class="content">
+    <h1>Step 1: Confirm read access to the new build path</h1>
+    <p class="ok">✅ Path is accessible from this machine.</p>
+    <p>Open the received new build UNC path in Windows Explorer and confirm you can browse the folder contents without access errors.</p>
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>DU</td><td>Folder</td><td>Designer Update bundle</td></tr>
+        <tr><td>Javadoc</td><td>Folder</td><td>API documentation</td></tr>
+        <tr><td>ReleaseNotes</td><td>Folder</td><td>Release notes PDFs</td></tr>
+        <tr><td>ASCFDesignerUpdateSite_10.24.0.pb01_hf10_*.zip</td><td>File</td><td>Designer update site archive</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

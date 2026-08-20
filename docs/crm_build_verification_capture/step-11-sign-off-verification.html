@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Step 11 — Sign-off verification</title>
+  <style>
+    body { font-family: Segoe UI, system-ui, sans-serif; margin: 0; background: #f1f5f9; padding: 20px; }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; max-width: 720px; margin: 0 auto; }
+    .step { color: #0369a1; font-weight: 700; margin-bottom: 8px; }
+    ul { margin: 12px 0 0; padding-left: 22px; line-height: 1.7; }
+    li.done { color: #059669; }
+    .ok { margin-top: 16px; padding: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; color: #166534; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="step">Step 11</div>
+    <h2 style="margin:0 0 8px;">Build verification sign-off checklist</h2>
+    <ul>
+      <li class="done">Manifest Implementation-Version changes match the expected CRM release.</li>
+      <li class="done">Class/Java diffs in listed JARs are understood and approved.</li>
+      <li class="done">No unexpected manifest version on unchanged third-party JARs.</li>
+      <li class="done">Report saved from <code>\\YOUR-PC\c$\crm_compare_reports</code> if audit is required.</li>
+    </ul>
+    <div class="ok">✓ CRM build verification complete — ready for sign-off</div>
+  </div>
+</body>
+</html>

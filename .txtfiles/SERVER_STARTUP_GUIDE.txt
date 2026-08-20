@@ -1,0 +1,318 @@
+================================================================================
+ENHANCED BUILTIN SERVER - STARTUP GUIDE
+================================================================================
+
+The builtin_server.py has been enhanced to automatically run all normalization
+tests and demos when it starts up!
+
+================================================================================
+QUICK START
+================================================================================
+
+Start the server with automatic demos and tests:
+
+    .\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 5000
+
+Or with the py launcher:
+
+    py builtin_server.py --host 0.0.0.0 --port 5000
+
+================================================================================
+WHAT HAPPENS ON STARTUP
+================================================================================
+
+When you start the server, it will automatically:
+
+1. ✓ Run Normalization Tests (test_normalization.py)
+   - Tests all CRM-specific naming patterns
+   - Verifies: winpack__V10_0_1_22.jar → winpack.jar
+   - Verifies: SDK_CRM_10.0.1.22_linux64_20251120_2043.jar normalization
+   - Verifies: unsigned JAR handling
+   - Verifies: AmdocsCRM.ear patterns
+
+2. ✓ Run Nested Path Demo (demo_nested_normalization.py)
+   - Shows how nested JAR paths are normalized
+   - Demonstrates HFB22 vs HFB21 matching
+
+3. ✓ Start the Web Server
+   - Web UI accessible at http://0.0.0.0:5000
+   - Network accessible (if firewall allows)
+
+================================================================================
+EXPECTED OUTPUT ON STARTUP
+================================================================================
+
+You will see output like this:
+
+================================================================================
+RUNNING STARTUP DEMOS AND TESTS
+================================================================================
+
+[RUN] Normalization Tests
+--------------------------------------------------------------------------------
+[PASS] winpack__V10_0_1_22.jar → winpack.jar
+[PASS] SDK_CRM_10.0.1.22_linux64_20251120_2043.jar → SDK_CRM_linux64.jar
+...
+ALL TESTS PASSED!
+[OK] Normalization Tests completed successfully
+
+[RUN] Nested Path Normalization Demo
+--------------------------------------------------------------------------------
+[MATCH] CRM winpack pattern
+  HFB22 path: crm/.../winpack__V10_0_1_22.jar
+  HFB21 path: crm/.../winpack__V10_0_1_21.jar
+  Result: These paths will be treated as IDENTICAL
+...
+[OK] Nested Path Normalization Demo completed successfully
+
+================================================================================
+STARTUP DEMOS COMPLETE
+================================================================================
+
+Built-in server running at http://0.0.0.0:5000
+Accessible on the network at: http://YOUR_IP:5000
+
+Press Ctrl+C to stop the server
+
+================================================================================
+COMMAND LINE OPTIONS
+================================================================================
+
+Full Command:
+    .\.venv\Scripts\python.exe builtin_server.py [OPTIONS]
+
+Options:
+    --host HOST        Host/IP to bind (default: 127.0.0.1)
+                      Use 0.0.0.0 to allow network access
+    
+    --port PORT        Port to bind (default: 5000)
+    
+    --skip-demos       Skip running startup demos and tests
+                      (use this for faster startup if tests already passed)
+
+Examples:
+
+# Local access only (default)
+.\.venv\Scripts\python.exe builtin_server.py
+
+# Network access (recommended)
+.\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 5000
+
+# Different port
+.\.venv\Scripts\python.exe builtin_server.py --port 8080
+
+# Skip startup demos (faster)
+.\.venv\Scripts\python.exe builtin_server.py --skip-demos
+
+# Combine options
+.\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 8080 --skip-demos
+
+================================================================================
+WEB UI FEATURES
+================================================================================
+
+Once the server is running, open your browser to:
+    http://localhost:5000  (local access)
+    http://YOUR_IP:5000    (network access)
+
+NEW Quick Action Buttons:
+--------------------------
+1. 🚀 Compare CRM SDK JARs (HFB22 vs HFB21)
+   - Pre-configured comparison with your JAR paths
+   - Runs compare_crm_jars.py automatically
+   - Shows results in the browser
+   - Generates downloadable reports
+
+2. 🧪 Run Normalization Tests
+   - Runs all test scripts
+   - Shows test results in the browser
+   - Verifies normalization is working correctly
+
+Regular Features:
+-----------------
+- Compare any two folders/JAR files
+- Multiple comparison modes:
+  * Full content comparison
+  * Naming convention only
+  * Archive contents (.jar/.war/.ear/.zip/.rpm)
+  * FOSS/Foundation version checking
+- Browse and download previous reports
+- Copy folders between locations
+
+================================================================================
+USING THE QUICK ACTION BUTTONS
+================================================================================
+
+Compare CRM SDK JARs:
+---------------------
+1. Click "Compare CRM SDK JARs (HFB22 vs HFB21)" button
+2. Wait for comparison to complete (5-10 seconds)
+3. View results in browser
+4. Click "View Reports" to see detailed HTML report
+5. Download reports if needed
+
+Run Normalization Tests:
+------------------------
+1. Click "Run Normalization Tests" button
+2. See all test results in browser
+3. Verify all tests pass (should show [PASS])
+4. Review normalization patterns
+
+================================================================================
+MANUAL COMPARISONS
+================================================================================
+
+To compare different folders:
+
+1. Enter paths in "Folder 1 path" and "Folder 2 path" fields
+   - Network paths: \\server\share\folder
+   - Local paths: C:\Users\...\folder
+   - JAR files: path\to\file.jar
+
+2. Select comparison mode:
+   - Full content comparison (default, uses normalization)
+   - Naming convention comparison
+   - Archives contents (detailed JAR/WAR/EAR analysis)
+   - FOSS/Foundation (check library versions)
+
+3. Choose options:
+   - Show all differences (not just missing files)
+   - Ignore timestamp-only diffs
+   - Suppress warning messages
+
+4. Click "Run comparison"
+
+5. View results in browser or download reports
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Server won't start:
+-------------------
+- Check if port 5000 is already in use
+  Solution: Use different port with --port 8080
+
+- Python not found
+  Solution: Use full path to Python executable
+  .\.venv\Scripts\python.exe builtin_server.py
+
+Startup demos fail:
+-------------------
+- Check that test files exist:
+  * test_normalization.py
+  * demo_nested_normalization.py
+
+- To skip demos and start server anyway:
+  .\.venv\Scripts\python.exe builtin_server.py --skip-demos
+
+Can't access from another computer:
+------------------------------------
+- Use --host 0.0.0.0 instead of 127.0.0.1
+- Check Windows Firewall settings
+- Ensure port 5000 is open in firewall
+
+CRM comparison fails:
+---------------------
+- Check network access to \\DVCIISILON01\cm_share3
+- Verify JAR file paths are correct
+- Ensure you have read permissions
+- Run diagnostics: py main.py --diagnose --base-path "\\DVCIISILON01\cm_share3"
+
+================================================================================
+ENVIRONMENT VARIABLES (OPTIONAL)
+================================================================================
+
+You can set default values using environment variables:
+
+    set HOST=0.0.0.0
+    set PORT=5000
+    .\.venv\Scripts\python.exe builtin_server.py
+
+This is useful for consistent startup without typing options every time.
+
+================================================================================
+COMPARISON WITH OTHER SCRIPTS
+================================================================================
+
+builtin_server.py:
+  - Web-based interface
+  - Runs on network-accessible server
+  - Has quick action buttons for common tasks
+  - Automatically runs tests on startup
+  - Best for: Regular use, team access, automated testing
+
+compare_crm_jars.py:
+  - Command-line only
+  - Compares specific HFB22 vs HFB21 JARs
+  - Generates text and HTML reports
+  - Best for: One-time comparisons, scripting
+
+test_normalization.py:
+  - Command-line only
+  - Tests normalization patterns
+  - Best for: Verifying the fix works
+
+main.py:
+  - Command-line only
+  - Most flexible, many options
+  - Best for: Advanced users, custom comparisons
+
+================================================================================
+LOGS AND REPORTS
+================================================================================
+
+The server generates reports in the project directory:
+
+- crm_sdk_comparison_*.txt/.html     (CRM JAR comparisons)
+- ascf_patch_comparison_*.txt/.html  (Full comparisons)
+- ascf_archives_report_*.txt/.html   (Archive comparisons)
+- ascf_naming_convention_*.txt/.html (Naming reports)
+
+Access reports via:
+  - Web UI: Click "Browse comparison reports"
+  - Direct URL: http://localhost:5000/reports
+  - File system: C:\Users\SVINAYAK\python_project\
+
+================================================================================
+PERFORMANCE TIPS
+================================================================================
+
+For faster startup:
+  Use --skip-demos if tests already passed today
+
+For faster comparisons:
+  - Use "Naming convention" mode for quick checks
+  - Use --ignore-timestamp-only to skip minor diffs
+  - Local folders are faster than network paths
+
+For large JARs:
+  - Use "Archives contents" mode for detailed analysis
+  - Enable "Suppress warnings" to reduce noise
+  - Be patient - nested JARs take time to analyze
+
+================================================================================
+KEYBOARD SHORTCUTS
+================================================================================
+
+While server is running:
+  Ctrl+C  - Stop the server gracefully
+
+In browser:
+  Ctrl+R  - Refresh page
+  Ctrl+T  - New tab (to keep multiple reports open)
+
+================================================================================
+
+READY TO START!
+
+Run this command to start the server with all features:
+
+    .\.venv\Scripts\python.exe builtin_server.py --host 0.0.0.0 --port 5000
+
+Then open your browser to: http://localhost:5000
+
+Enjoy the enhanced comparison tool! 🚀
+
+================================================================================
+

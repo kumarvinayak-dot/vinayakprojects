@@ -1,0 +1,131 @@
+ASCF Application — Automation Run Steps (After Receiving New Build Path)
+
+================================================================================
+
+ILLUSTRATED RUNBOOK (screenshots embedded — open from any folder)
+
+  Double-click or open in browser:  docs\ASCF_AUTOMATION_RUNBOOK.html
+
+  Also at project root after clone:   ASCF_AUTOMATION_RUN_STEPS.txt (this file)
+
+  Screenshots are built into the HTML file (no separate image folder needed when sharing).
+
+  Regenerate (developers):
+    python scripts\build_ascf_automation_runbook_html.py
+
+  Source PNGs (maintainers only):  docs\runbook_screenshots\step-01-explorer-access.png … step-22-verify-admin-form.png
+
+================================================================================
+
+CURRENT RELEASE (example — HF09 vs HF10)
+
+  Old build (HF09): \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf09
+  New build (HF10): \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf10
+  ASCF product version: 10.24.0.pb01  |  HF number: 10
+
+================================================================================
+
+ASCF COMPARISON OPTIONS (home page — select ASCF only, then one mode)
+
+  Comparison modes (mutually exclusive radio buttons — one per run)
+    - Full content comparison (default) — full HF folder tree diff; main HF build verification
+    - Naming convention comparison — pair archives/JARs with same logical name, different version suffix
+    - Archives (.ear/.war/.zip/.rpm/.jar) contents — deep member compare inside each archive
+    - FOSS/Foundation (JAR Implementation-Version) — one JAR per run; MANIFEST.MF version check
+
+  ASCF full — optional report options (shown when Full content comparison is selected)
+    - JAR names for class diff — decompiled .class / CFR Java diffs (optional C:\cfr-0.152.jar)
+    - File patterns for text / config diffs — e.g. app.json, *.yml, web.xml (section only when filled)
+    - JAR names for manifest diff — e.g. scala*.jar — Implementation-Version table in report
+    - Explicit file sizes to compare — e.g. AmdocsUIF.ear, *.war — force old vs new size rows
+
+  FOSS/Foundation mode — additional fields
+    - Jar name — type manually or pick from dropdown
+    - Foundation product — Amdocs Core, Process Manager, Security Manager, System Configuration, obfuscation-utility
+    - Foss product — commons-io, log4j-core, slf4j-api, jxbrowser, esapi, and other bundled FOSS JARs
+    - Max retries / Retry delay — UNC network access retry settings
+
+  Other ASCF home-page helpers
+    - Load ASCF base paths — version table with Use as Old / Use as New; Open in Explorer (localhost)
+    - Copy build folders (ASCF) — copy Old/New HF to local disk before compare (faster on slow shares)
+    - Environment Validation — SSH to deployment host; verify JAR Implementation-Version remotely
+    - Foundations Link — prepare/update Foundation portal pages after build verification
+    - Administrative Tool — submit new HF to Foundation admin site
+
+  HTML report — navigation & sections
+    - Expand all / Collapse all — toolbar on every comparison HTML report
+    - Quick Navigation — jump links to comparison table, missing files, identical files, etc.
+    - Detailed Comparison Table — Beyond Compare style side-by-side status per archive/file
+    - Optional sections appear only when configured: manifest diff, class decompilation, text/config changes, explicit sizes
+
+  Related: docs\ASCF_FOSS_FOUNDATIONS_ADOPTION_RUNBOOK.html — FOSS adoption & Foundation publish workflow
+
+================================================================================
+
+ONE-LINE STEPS
+
+ 1. Open the received new build UNC path in Windows Explorer and confirm you have read access.
+
+ 2. Note the previous HF build UNC path to use as the Old build baseline for comparison.
+
+ 3. Double-click start_server.bat in the python_project folder (or Desktop ASCF Compare Tool - Start shortcut) to start the automation tool server.
+
+ 4. Open http://localhost:5000/crm in Chrome or Edge (network URL on shared server: http://10.19.164.180:5000/crm).
+
+ 5. Check the Build Comparison checkbox on the home page.
+
+ 6. Check the ASCF application checkbox only (do not select CRM/AMSS, UXF/OMNI, or DEX).
+
+ 7. Paste \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf09 into the Old build field.
+
+ 8. Paste \\INPNQASCFLB02\rel\10241\uif\ASCF_HF_10240pb01hf10 into the New build field.
+
+ 9. Optionally click Load ASCF base paths and use Use as Old / Use as New to populate paths from the version table.
+
+10. Select one ASCF comparison mode: Full content (default), Naming convention, Archives contents, or FOSS/Foundation. For Full content, configure optional class/manifest/config/size fields in the ASCF full — optional report options panel if needed. For FOSS/Foundation, pick Foundation or Foss product from the dropdown or type Jar name manually.
+
+11. Click Run comparison and allow the progress tab to open (enable pop-ups if the browser blocks it).
+
+12. Watch Console Output until the comparison finishes and the HTML report opens automatically.
+
+13. Review the HTML report: use Expand all / Collapse all; check Added in New Build, Removed in New Build, archive content differences, and any optional manifest/class/config sections you enabled.
+
+14. Save or share the HTML report from \\YOUR-PC\c$\crm_compare_reports if sign-off is required.
+
+15. Optionally enable Environment Validation, enter SSH host/user/password and remote ASCF deployment path, and validate JAR Implementation-Version on the deployment server.
+
+16. After build verification passes, click Foundations Link on the home page (visible when ASCF is selected).
+
+17. In Step 1 (Prepare), select ASCF Product Version 10.24.0.pb01, enter HF number 10, and click Prepare Foundation Link.
+
+18. In Step 2 (Update), enter version 10.24.0.pb01, HF 10, month Jun, year 2026, creation date 20260609, then click Update Foundation Link.
+
+19. Click Update Index.html, enter ASCF version, HF number, month, and year, then submit.
+
+20. Click Update Javadoc.html, enter ASCF Product Version and HF number 10, then submit.
+
+21. Return to the home page, click Administrative Tool, fill New Hotfix Version 10.24.0.pb01_hf10, Release Date, Download URL, and Release Notes URL, then click Submit & Launch Automation.
+
+22. Verify the pre-filled Foundation admin form in the opened browser window and click Add Hotfix to publish the release.
+
+================================================================================
+
+QUICK REFERENCE
+
+  Daily start:   start_server.bat  or  Desktop shortcut ASCF Compare Tool - Start
+
+  Tool URL:      http://localhost:5000/crm  (network example: http://10.19.164.180:5000/crm)
+
+  Stop server:   STOP_SERVER.bat
+
+  Reports:       \\YOUR-PC\c$\crm_compare_reports
+
+  Temp files:    \\YOUR-PC\c$\crm_compare_temp
+
+  Full runbook:  docs\ASCF_AUTOMATION_RUNBOOK.html  (embedded screenshots — safe to copy/share)
+
+  FOSS adoption: docs\ASCF_FOSS_FOUNDATIONS_ADOPTION_RUNBOOK.html
+
+  Tool setup:    docs\ASCF_COMPARE_TOOL_SETUP.html
+
+================================================================================

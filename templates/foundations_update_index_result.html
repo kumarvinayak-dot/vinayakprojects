@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Update Index.html - Result</title>
+    <style>
+      :root { --accent:#f59e0b; --bg:#f6f7fb; --bg2:#fefce8; --text:#0f172a; --muted:#6b7280; --border:#d0d7de; }
+      body { font-family: system-ui, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); color: var(--text); }
+      .container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+      .header { display:flex; align-items:center; justify-content:space-between; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color:#fff; border-radius:14px; padding:14px 16px; }
+      h2 { margin:0; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
+      .success-card { background:#f0fdf4; border:1px solid #059669; }
+      .error-card { background:#fef2f2; border:1px solid #dc2626; }
+      .info-card { background:#eff6ff; border:1px solid #3b82f6; }
+      table { width:100%; border-collapse:collapse; margin:15px 0; }
+      table tr { border-bottom:1px solid #e5e7eb; }
+      table td { padding:8px; }
+      table td:first-child { font-weight:600; width:150px; }
+      .mono { font-family:monospace; font-size:12px; word-break:break-all; }
+      .back { color:#fff; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Update Index.html - Result</h2>
+        <a class="back" href="{{ url_for('foundations_update_index') }}">← Back</a>
+      </div>
+      
+      {% if result.success %}
+      <div class="card success-card">
+        <h3 style="color:#059669; margin-top:0;">✅ Index.html Updated Successfully</h3>
+        <p>Added new entry for <strong>{{ result.new_version_str }}</strong> to the index.html file.</p>
+        <table>
+          <tr>
+            <td style="color:#065f46;">ASCF Version:</td>
+            <td>{{ result.ascf_version }}</td>
+          </tr>
+          <tr>
+            <td style="color:#065f46;">New HF:</td>
+            <td>hf{{ result.hf_number }}</td>
+          </tr>
+          <tr>
+            <td style="color:#065f46;">Previous HF:</td>
+            <td>hf{{ result.prev_hf_num }}</td>
+          </tr>
+          <tr>
+            <td style="color:#065f46;">Month/Year:</td>
+            <td>{{ result.month }} {{ result.year }}</td>
+          </tr>
+          <tr style="border-bottom:none;">
+            <td style="color:#065f46;">File:</td>
+            <td class="mono">{{ result.file_path }}</td>
+          </tr>
+        </table>
+      </div>
+      
+      {% elif result.info %}
+      <div class="card info-card">
+        <h3 style="color:#1d4ed8; margin-top:0;">ℹ️ Information</h3>
+        <p>{{ result.info }}</p>
+        <p>No changes were made.</p>
+      </div>
+      
+      {% elif result.error %}
+      <div class="card error-card">
+        <h3 style="color:#dc2626; margin-top:0;">❌ Error</h3>
+        <p>{{ result.error }}</p>
+      </div>
+      
+      {% else %}
+      <div class="card error-card">
+        <h3 style="color:#dc2626; margin-top:0;">❌ Unknown Error</h3>
+        <p>Something went wrong. Please try again.</p>
+      </div>
+      {% endif %}
+      
+      <p style="margin-top:20px;">
+        <a href="{{ url_for('foundations_update_index') }}">← Back to Update Index.html</a> |
+        <a href="{{ url_for('foundations') }}">← Back to Foundations Link</a>
+      </p>
+    </div>
+  </body>
+</html>
