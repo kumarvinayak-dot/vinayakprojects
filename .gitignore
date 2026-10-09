@@ -76,3 +76,6 @@ _t2
 # Large generated / binary artifacts
 *.pptx
 *.pdf
+
+# Auto-generated Playwright scripts (the AI test-gen pipeline writes a new one per run)
+generated_tests/
