@@ -1490,6 +1490,55 @@ def ai_testgen_run():
     result = ai_testgen.generate_test_cases(query)
     return jsonify(result)
 
+@app.route("/ai-testgen/playwright", methods=["POST"])
+def ai_testgen_playwright():
+    import re
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    query = (data.get("query") or "").strip()
+    test_cases = (data.get("test_cases") or "").strip()
+    url = (data.get("url") or "").strip()
+    if not test_cases:
+        return jsonify({"error": "Generate test cases first."}), 400
+    if not re.match(r"^https?://", url, re.IGNORECASE):
+        return jsonify({"error": "Enter a valid target URL starting with http:// or https://"}), 400
+    result = ai_testgen.generate_playwright_script(
+        query, test_cases, url, bool(data.get("visible")),
+        (data.get("ui_details") or "").strip()[:20000])
+    return jsonify(result)
+
+@app.route("/ai-testgen/uimap", methods=["POST"])
+def ai_testgen_uimap():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.fetch_ui_map((data.get("url") or "").strip()))
+
+@app.route("/ai-testgen/guardrails", methods=["POST"])
+def ai_testgen_guardrails():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.run_guardrails(data.get("script_id") or ""))
+
+@app.route("/ai-testgen/score", methods=["POST"])
+def ai_testgen_score():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.score_test_cases(data.get("script_id") or ""))
+
+@app.route("/ai-testgen/approve", methods=["POST"])
+def ai_testgen_approve():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.record_approval(
+        data.get("script_id") or "", data.get("decision") or "",
+        (data.get("reviewer") or "").strip(), (data.get("note") or "").strip()))
+
+@app.route("/ai-testgen/execute", methods=["POST"])
+def ai_testgen_execute():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.execute_script(data.get("script_id") or ""))
+
 _CRM_JAR_DOWNLOAD_SUFFIXES = frozenset(
     (".jar", ".war", ".ear", ".zip", ".kar", ".rar")
 )

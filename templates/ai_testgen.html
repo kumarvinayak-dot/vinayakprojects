@@ -15,15 +15,36 @@
       .card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:20px; margin-top:16px; box-shadow: 0 2px 10px rgba(2,6,23,0.04); }
       .card-green { background:#f0fdf4; border:1px solid #059669; }
       .card-blue { background:#eff6ff; border:1px solid #3b82f6; }
-      input[type="text"] { width:100%; padding:10px 12px; border-radius:8px; background:#fff; font-size:14px; border:1px solid #059669; box-sizing:border-box; }
+      .card-amber { background:#fffbeb; border:1px solid #d97706; }
+      .card-purple { background:#faf5ff; border:1px solid #7c3aed; }
+      input[type="text"], textarea { width:100%; padding:10px 12px; border-radius:8px; background:#fff; font-size:14px; border:1px solid #059669; box-sizing:border-box; font-family:inherit; }
       .label-green { display:block; font-weight:600; margin-bottom:8px; color:#065f46; }
-      .btn-green { background:linear-gradient(90deg, #059669 0%, #10b981 100%); color:white; border:none; padding:12px 24px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition: transform 0.1s, filter 0.15s; }
-      button:hover { filter: brightness(1.05); }
-      button:active { transform: translateY(1px); }
+      .btn-row { display:flex; flex-wrap:wrap; gap:10px; }
+      .btn { color:white; border:none; padding:12px 20px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; transition: transform 0.1s, filter 0.15s; }
+      .btn-green { background:linear-gradient(90deg, #059669 0%, #10b981 100%); }
+      .btn-blue { background:linear-gradient(90deg, #2563eb 0%, #3b82f6 100%); }
+      .btn-amber { background:linear-gradient(90deg, #d97706 0%, #f59e0b 100%); }
+      .btn-purple { background:linear-gradient(90deg, #7c3aed 0%, #8b5cf6 100%); }
+      .btn-red { background:linear-gradient(90deg, #dc2626 0%, #ef4444 100%); }
+      button:disabled { background:#cbd5e1 !important; cursor:not-allowed; }
+      button:not(:disabled):hover { filter: brightness(1.05); }
+      button:not(:disabled):active { transform: translateY(1px); }
       small { color: var(--muted); }
-      pre { white-space: pre-wrap; word-wrap: break-word; font-family: ui-monospace, monospace; font-size:13px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border); }
+      pre { white-space: pre-wrap; word-wrap: break-word; font-family: ui-monospace, monospace; font-size:13px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border); max-height:480px; overflow:auto; }
       .score-badge { display:inline-block; padding:6px 14px; border-radius:20px; font-weight:700; color:#fff; background:#059669; }
+      .pass { background:#059669; } .fail { background:#dc2626; }
       .spinner { display:none; margin-top:12px; color:#059669; font-weight:600; }
+      .row2 { display:grid; grid-template-columns: 1fr auto; gap:12px; align-items:end; }
+      .check { display:flex; gap:6px; align-items:center; font-size:14px; white-space:nowrap; padding-bottom:10px; }
+      .gr-line { margin:6px 0; }
+      .hidden { display:none; }
+      .sc-table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; }
+      .sc-table th, .sc-table td { border:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
+      .sc-table th { background:#ede9fe; }
+      .sc-table details summary { cursor:pointer; color:#6d28d9; }
+      .sc-num { font-weight:700; white-space:nowrap; }
+      .ok { color:#047857; } .bad { color:#b91c1c; }
+      @media (max-width: 600px) { .row2 { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
@@ -34,19 +55,39 @@
       </div>
 
       <div class="card card-green">
-        <p><strong>RAG + LangGraph + DeepEval pipeline.</strong> Enter a requirement area
-        (e.g. "order cancellation", "proration billing", "provisioning failure"). The system
-        retrieves relevant requirements, generates test cases with an agentic
-        generate→validate→refine loop, and scores them.</p>
+        <p><strong>RAG + LangGraph + DeepEval → Playwright → Guardrails → Stage 6 Human Validation → Execute.</strong>
+        Enter a requirement area (e.g. "order cancellation", "proration billing", "provisioning failure"),
+        generate test cases, convert them to a Playwright script, run the guardrails, and
+        execute the script only after a human approves it.</p>
 
         <label class="label-green" for="query">Requirement area to generate test cases for:</label>
         <input type="text" id="query" placeholder="e.g. order cancellation" value="order cancellation" />
         <br/><br/>
-        <button class="btn-green" onclick="generate()">Generate Agentic Test Cases</button>
-        <div class="spinner" id="spinner">⏳ Running RAG retrieval → LangGraph agent loop → scoring... (may take 20-30s)</div>
+        <div class="row2">
+          <div>
+            <label class="label-green" for="url">Target application URL (for the Playwright script):</label>
+            <input type="text" id="url" placeholder="e.g. https://the-internet.herokuapp.com/login" />
+          </div>
+          <label class="check"><input type="checkbox" id="visible" /> Watch browser (headed)</label>
+        </div>
+        <br/>
+        <label class="label-green" for="uiDetails">App UI details — pages, selectors, test users (the script uses only these):</label>
+        <textarea id="uiDetails" rows="4" placeholder="e.g. LOGIN /login: #username, #password, #login-button ... or click 'Load UI map from app'"></textarea>
+        <div class="btn-row" style="margin-top:8px;">
+          <button class="btn btn-blue" type="button" id="btnUiMap" onclick="loadUiMap()" style="padding:8px 14px;">Load UI map from app</button>
+          <small id="uiMapStatus" style="align-self:center;"></small>
+        </div>
+        <br/>
+        <div class="btn-row">
+          <button class="btn btn-green" id="btnGen" onclick="generate()">Generate Agentic Test Cases</button>
+          <button class="btn btn-blue" id="btnPw" onclick="generatePlaywright()" disabled>Generate Playwright Script</button>
+          <button class="btn btn-amber" id="btnGr" onclick="runGuardrails()" disabled>Generate Guardrail</button>
+          <button class="btn btn-purple" id="btnHv" onclick="openApproval()" disabled>Human Validation Approval</button>
+        </div>
+        <div class="spinner" id="spinner"></div>
       </div>
 
-      <div id="results" style="display:none;">
+      <div id="results" class="hidden">
         <div class="card">
           <h3>📊 Validation Score
             <span class="score-badge" id="score">-</span>
@@ -65,33 +106,287 @@
           <pre id="context"></pre>
         </div>
       </div>
+
+      <div id="pwCard" class="card card-blue hidden">
+        <h3>🎭 Generated Playwright Script</h3>
+        <p><small>Saved to: <span id="pwPath"></span></small></p>
+        <pre id="pwCode"></pre>
+      </div>
+
+      <div id="grCard" class="card card-amber hidden">
+        <h3>🛡️ Guardrails <span class="score-badge" id="grBadge">-</span></h3>
+        <div class="gr-line" id="grSafety"></div>
+        <div class="gr-line" id="grMatch"></div>
+      </div>
+
+      <div id="hvCard" class="card card-purple hidden">
+        <h3>🧑‍⚖️ Stage 6 — Human-in-the-Loop Validation</h3>
+        <p>Review the Playwright script and guardrail results above. The script runs on this
+        server <strong>only</strong> after you approve it.</p>
+        <h4 style="margin-bottom:6px;">📏 Per-Case DeepEval Scoring <span class="score-badge" id="scBadge">-</span></h4>
+        <p style="margin-top:0;"><small>Each test case scored individually for Faithfulness (grounded in the
+        requirements) and Answer Relevancy. Threshold <span id="scThreshold">0.7</span>. Cases below the threshold are
+        regenerated automatically and rescored (up to <span id="scMax">2</span> attempts) — only weak cases are refined.</small></p>
+        <p id="scRefined" class="hidden" style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:10px;"></p>
+        <div style="overflow-x:auto;">
+          <table class="sc-table">
+            <thead><tr><th>#</th><th>Test case</th><th>Faithfulness</th><th>Relevancy</th><th>Attempts</th><th>Result</th></tr></thead>
+            <tbody id="scBody"></tbody>
+          </table>
+        </div>
+        <p id="scStatus" class="hidden" style="background:#fee2e2;border:1px solid #dc2626;border-radius:8px;padding:10px;"></p>
+        <button class="btn btn-amber hidden" type="button" id="btnScRetry" onclick="runScoring()" style="padding:8px 14px;">↻ Retry scoring</button>
+        <br/>
+        <label class="label-green" for="reviewer">Reviewer name:</label>
+        <input type="text" id="reviewer" placeholder="Your name" />
+        <br/><br/>
+        <label class="label-green" for="note">Review note (optional):</label>
+        <textarea id="note" rows="2" placeholder="e.g. Verified selectors and assertions"></textarea>
+        <br/><br/>
+        <div class="btn-row">
+          <button class="btn btn-green" id="btnApprove" onclick="decide('approve')">✔ Approve &amp; Execute</button>
+          <button class="btn btn-red" id="btnReject" onclick="decide('reject')">✖ Reject</button>
+        </div>
+        <p id="hvStatus"></p>
+      </div>
+
+      <div id="exCard" class="card hidden">
+        <h3>▶️ Execution Result <span class="score-badge" id="exBadge">-</span></h3>
+        <pre id="exOutput"></pre>
+      </div>
     </div>
 
     <script>
+      const $ = id => document.getElementById(id);
+      let lastQuery = '', lastTestCases = '', scriptId = null;
+
+      function busy(msg) {
+        $('spinner').textContent = msg ? '⏳ ' + msg : '';
+        $('spinner').style.display = msg ? 'block' : 'none';
+        ['btnGen','btnPw','btnGr','btnHv','btnApprove','btnReject'].forEach(id => {
+          const b = $(id);
+          if (msg) { b.dataset.wasDisabled = b.disabled; b.disabled = true; }
+          else if (b.dataset.wasDisabled !== undefined) { b.disabled = b.dataset.wasDisabled === 'true'; delete b.dataset.wasDisabled; }
+        });
+      }
+      function show(id, on) { $(id).classList.toggle('hidden', !on); }
+      function resetFrom(stage) {
+        // stage: 'pw' resets script and later, 'gr' resets guardrails and later, 'hv' resets approval/execution
+        if (stage === 'pw') { scriptId = null; show('pwCard', false); $('btnGr').disabled = true; }
+        if (stage === 'pw' || stage === 'gr') { show('grCard', false); $('btnHv').disabled = true; }
+        show('hvCard', false); show('exCard', false); $('hvStatus').textContent = '';
+      }
+      async function post(url, body) {
+        const resp = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+        return resp.json();
+      }
+
       async function generate() {
-        const query = document.getElementById('query').value.trim();
+        const query = $('query').value.trim();
         if (!query) { alert('Please enter a requirement area.'); return; }
-        document.getElementById('spinner').style.display = 'block';
-        document.getElementById('results').style.display = 'none';
+        show('results', false); $('btnPw').disabled = true; resetFrom('pw');
+        busy('Running RAG retrieval → LangGraph agent loop → scoring... (may take 20-30s)');
         try {
-          const resp = await fetch('/ai-testgen/run', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({query: query})
-          });
-          const data = await resp.json();
-          document.getElementById('spinner').style.display = 'none';
+          const data = await post('/ai-testgen/run', {query});
+          busy('');
           if (data.error) { alert('Error: ' + data.error); return; }
-          document.getElementById('score').textContent = data.score + '/10';
-          document.getElementById('attempts').textContent = ' (after ' + data.attempts + ' attempt(s))';
-          document.getElementById('feedback').textContent = data.feedback || '';
-          document.getElementById('testcases').textContent = data.test_cases;
-          document.getElementById('context').textContent = data.context;
-          document.getElementById('results').style.display = 'block';
-        } catch (e) {
-          document.getElementById('spinner').style.display = 'none';
-          alert('Request failed: ' + e);
+          $('score').textContent = data.score + '/10';
+          $('attempts').textContent = ' (after ' + data.attempts + ' attempt(s))';
+          $('feedback').textContent = data.feedback || '';
+          $('testcases').textContent = data.test_cases;
+          $('context').textContent = data.context;
+          show('results', true);
+          lastQuery = query; lastTestCases = data.test_cases;
+          $('btnPw').disabled = false;
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
+      }
+
+      async function loadUiMap() {
+        const url = $('url').value.trim();
+        if (!/^https?:\/\//i.test(url)) { alert('Enter the target application URL first.'); $('url').focus(); return; }
+        $('uiMapStatus').textContent = 'Loading...';
+        try {
+          const r = await post('/ai-testgen/uimap', {url});
+          if (r.error) { $('uiMapStatus').textContent = ''; alert(r.error); return; }
+          $('uiDetails').value = r.ui_details;
+          $('uiMapStatus').textContent = '✅ Loaded from ' + r.source;
+        } catch (e) { $('uiMapStatus').textContent = ''; alert('Request failed: ' + e); }
+      }
+
+      async function generatePlaywright() {
+        const url = $('url').value.trim();
+        if (!/^https?:\/\//i.test(url)) { alert('Enter the target application URL (http:// or https://).'); $('url').focus(); return; }
+        resetFrom('pw');
+        busy('Generating Playwright script from the test cases... (may take 10-20s)');
+        try {
+          const data = await post('/ai-testgen/playwright', {query: lastQuery, test_cases: lastTestCases, url,
+            visible: $('visible').checked, ui_details: $('uiDetails').value.trim()});
+          busy('');
+          if (data.error) { alert('Error: ' + data.error); return; }
+          scriptId = data.script_id;
+          $('pwCode').textContent = data.code;
+          $('pwPath').textContent = data.path;
+          show('pwCard', true);
+          $('btnGr').disabled = false;
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
+      }
+
+      async function runGuardrails() {
+        if (!scriptId) return;
+        resetFrom('gr');
+        busy('Running guardrails: safety scan → requirement match (LLM judge)...');
+        try {
+          const g = await post('/ai-testgen/guardrails', {script_id: scriptId});
+          busy('');
+          if (g.error) { alert('Error: ' + g.error); return; }
+          renderGuardrails(g);
+          $('btnHv').disabled = !g.passed;
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
+      }
+
+      function renderGuardrails(g) {
+        $('grSafety').textContent = (g.safe ? '✅' : '❌') + ' Guardrail 1 — Safety scan: ' +
+          (g.safe ? 'PASSED (no forbidden operations)' : 'BLOCKED — forbidden: ' + g.hits.join(', '));
+        $('grMatch').textContent = (g.match_score >= g.threshold ? '✅' : '❌') +
+          ' Guardrail 2 — Requirement match: ' + g.match_score + '/10 (needs ≥ ' + g.threshold + ') — ' + (g.match_reason || '');
+        $('grBadge').textContent = g.passed ? 'PASSED' : 'BLOCKED';
+        $('grBadge').className = 'score-badge ' + (g.passed ? 'pass' : 'fail');
+        show('grCard', true);
+      }
+
+      function cell(text, cls) {
+        const td = document.createElement('td');
+        if (cls) td.className = cls;
+        td.textContent = text;
+        return td;
+      }
+      function scoreCell(score, reason, threshold) {
+        const td = document.createElement('td');
+        if (score === undefined) { td.textContent = '-'; return td; }
+        const d = document.createElement('details');
+        const s = document.createElement('summary');
+        s.className = 'sc-num ' + (score >= threshold ? 'ok' : 'bad');
+        s.textContent = score.toFixed(2);
+        d.appendChild(s);
+        d.appendChild(document.createTextNode(reason || ''));
+        td.appendChild(d);
+        return td;
+      }
+      function renderScores(sc) {
+        const body = $('scBody'); body.innerHTML = '';
+        $('scThreshold').textContent = sc.threshold;
+        sc.cases.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.appendChild(cell(c.case_number));
+          tr.appendChild(cell(c.title + (c.error ? ' — not scored: ' + friendlyError(c.error) : ''), c.error ? 'bad' : ''));
+          tr.appendChild(scoreCell(c.faithfulness, c.faith_reason, sc.threshold));
+          tr.appendChild(scoreCell(c.relevancy, c.rel_reason, sc.threshold));
+          const hist = (c.history || []).map(h => 'Attempt ' + h.attempt + ': F=' + h.faithfulness.toFixed(2) +
+            ' R=' + h.relevancy.toFixed(2) + (h.passed ? ' ✅' : ' ❌')).join('\n');
+          const at = cell((c.attempts || 0) + (c.refined ? ' (refined)' : ''), c.refined ? 'sc-num' : '');
+          at.title = hist;
+          tr.appendChild(at);
+          tr.appendChild(cell(c.error ? '⚠️ ERROR' : (c.passed ? '✅ PASS' : '❌ FAIL'), c.passed ? 'ok' : 'bad'));
+          body.appendChild(tr);
+        });
+        if (sc.error_count) {
+          scoringProblem(sc.error_count + ' test case(s) could not be scored. ' +
+            (sc.cases.some(c => isDailyLimit(c.error)) ? 'The Groq free-tier DAILY token limit is used up — retry after the wait time shown, or upgrade the Groq plan.'
+             : sc.cases.some(c => isRateLimit(c.error)) ? 'The Groq free tier hit its per-minute rate limit — wait about a minute, then click Retry scoring.'
+                                                        : 'Click Retry scoring to try again.'));
         }
+        const all = sc.passed_count === sc.cases.length;
+        $('scMax').textContent = sc.max_attempts;
+        $('scBadge').textContent = sc.passed_count + '/' + sc.cases.length + ' passed';
+        $('scBadge').className = 'score-badge ' + (all ? 'pass' : 'fail');
+        if (sc.refined_count) {
+          $('scRefined').textContent = '♻️ ' + sc.refined_count + ' weak test case(s) were regenerated. ' +
+            'The Generated Test Cases, Playwright script and guardrails above have been updated to the refined ' +
+            'version — please review them before approving.';
+          show('scRefined', true);
+        }
+      }
+
+      function isDailyLimit(err) { return /daily limit|per day|\(TPD\)/i.test(err || ''); }
+      function isRateLimit(err) { return /429|rate limit/i.test(err || '') && !isDailyLimit(err); }
+      function friendlyError(err) {
+        if (isDailyLimit(err)) return err;
+        return isRateLimit(err) ? 'Groq rate limit reached (free tier: 8,000 tokens/minute)' : (err || '').slice(0, 160);
+      }
+      function scoringProblem(msg) {
+        $('scStatus').textContent = '⚠️ ' + msg;
+        show('scStatus', true); show('btnScRetry', true);
+      }
+
+      async function openApproval() {
+        resetFrom('hv');
+        show('hvCard', true);
+        $('hvCard').scrollIntoView({behavior:'smooth'});
+        await runScoring();
+      }
+
+      async function runScoring() {
+        $('scBadge').textContent = '-'; $('scBadge').className = 'score-badge';
+        show('scRefined', false); show('scStatus', false); show('btnScRetry', false);
+        $('scBody').innerHTML = '';
+        const tr = document.createElement('tr'), td = document.createElement('td');
+        td.colSpan = 6; td.style.color = '#6d28d9'; td.style.fontWeight = '600';
+        tr.appendChild(td); $('scBody').appendChild(tr);
+        const started = Date.now();
+        const tick = () => { td.textContent = '⏳ Scoring each test case with DeepEval and regenerating weak ones... ' +
+          Math.round((Date.now() - started) / 1000) + 's elapsed (usually 1-3 min; longer if Groq rate-limits)'; };
+        tick(); const timer = setInterval(tick, 1000);
+        $('btnApprove').disabled = true; $('btnReject').disabled = true;
+        busy('Stage 6: scoring each test case with DeepEval... (see the Stage 6 panel below)');
+        let canApprove = true;
+        try {
+          const sc = await post('/ai-testgen/score', {script_id: scriptId});
+          clearInterval(timer); busy('');
+          if (sc.error) { $('scBody').innerHTML = ''; scoringProblem('Scoring error: ' + friendlyError(sc.error) + ' You can still review and decide, or retry.'); }
+          else {
+            renderScores(sc);
+            if (sc.script) {
+              // weak cases were refined: the script was rebuilt and guardrails rerun on the server
+              lastTestCases = sc.test_cases;
+              $('testcases').textContent = sc.test_cases;
+              $('pwCode').textContent = sc.script.code;
+              $('pwPath').textContent = sc.script.path;
+              renderGuardrails(sc.guardrails);
+              canApprove = sc.guardrails.passed;
+              if (!canApprove) alert('The rebuilt Playwright script did not pass the guardrails. Approval is blocked — regenerate the script.');
+            }
+          }
+        } catch (e) {
+          clearInterval(timer); busy(''); $('scBody').innerHTML = '';
+          scoringProblem('Scoring request failed: ' + e + '. You can still review and decide, or retry.');
+        }
+        $('btnApprove').disabled = !canApprove; $('btnReject').disabled = false;
+        $('reviewer').focus();
+      }
+
+      async function decide(decision) {
+        const reviewer = $('reviewer').value.trim();
+        if (!reviewer) { alert('Please enter the reviewer name.'); $('reviewer').focus(); return; }
+        if (decision === 'approve' && !confirm('Approve and execute this Playwright script on the server?')) return;
+        busy(decision === 'approve' ? 'Recording approval...' : 'Recording rejection...');
+        try {
+          const a = await post('/ai-testgen/approve', {script_id: scriptId, decision, reviewer, note: $('note').value.trim()});
+          busy('');
+          if (a.error) { alert('Error: ' + a.error); return; }
+          $('hvStatus').textContent = (a.decision === 'approved' ? '✅ Approved' : '❌ Rejected') + ' by ' + a.reviewer + ' at ' + a.at;
+          $('btnApprove').disabled = true; $('btnReject').disabled = true;
+          if (a.decision !== 'approved') return;
+
+          busy('Executing the approved Playwright script... (up to 2 min)');
+          const r = await post('/ai-testgen/execute', {script_id: scriptId});
+          busy('');
+          if (r.error) { alert('Error: ' + r.error); return; }
+          $('exBadge').textContent = r.passed ? 'PASSED' : 'FAILED';
+          $('exBadge').className = 'score-badge ' + (r.passed ? 'pass' : 'fail');
+          $('exOutput').textContent = r.output || '(no output)';
+          show('exCard', true);
+          $('exCard').scrollIntoView({behavior:'smooth'});
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
       }
     </script>
   </body>
