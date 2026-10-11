@@ -68,11 +68,11 @@ def _chat(messages, retries=6, model=_MODEL, **options):
     A daily limit fails fast with a clear message; a per-minute limit waits for
     Groq's retry-after (capped at 30 s) and retries."""
     import time
-    from openai import RateLimitError
+    from openai import APIStatusError, RateLimitError
     for attempt in range(retries):
         try:
             return _client.chat.completions.create(model=model, messages=messages, **options)
-        except RateLimitError as e:
+        except RateLimitError as e:  # 429 - must come before APIStatusError (its parent)
             daily = _quota_message(e)
             if daily:
                 raise LLMQuotaError(daily) from e
@@ -84,6 +84,12 @@ def _chat(messages, retries=6, model=_MODEL, **options):
             except (AttributeError, ValueError):
                 wait = 2 ** (attempt + 1)
             time.sleep(min(max(wait, 1), 30))
+        except APIStatusError as e:  # 413 - one request bigger than the per-minute budget
+            if e.status_code != 413:
+                raise
+            raise LLMQuotaError("This request is larger than the Groq free tier allows in one "
+                                "call (8,000 tokens/minute). Shorten the App UI details or "
+                                "upgrade the Groq plan.") from e
 
 
 def _ask(system, user, **options):
@@ -180,7 +186,11 @@ import threading
 import uuid
 from datetime import datetime
 
+import stage5_generate_run_guardrails as _stage5
 from stage5_generate_run_guardrails import guardrail_safety, guardrail_match
+
+# Stage 5's judge has its own Groq client with no rate-limit handling; route it through _ask
+_stage5.ask_llm = lambda system, user: _ask(system, user)
 
 _GENERATED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_tests")
 _MATCH_THRESHOLD = 7
@@ -195,11 +205,11 @@ def _sha(code):
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
 
 
-def _build_script(query, test_cases, url, visible, ui_details=""):
-    """LLM-generate the Playwright script for the test cases and save it. Returns (code, path)."""
+def _script_rules(visible):
+    """System prompt shared by script generation and script repair."""
     launch_line = ("browser = p.chromium.launch(headless=False, slow_mo=800)" if visible
                    else "browser = p.chromium.launch(headless=True)")
-    system = (
+    return (
         "You are a test automation engineer. Convert the given test cases into ONE "
         "self-contained Python Playwright script (sync API). Requirements:\n"
         "- Use: from playwright.sync_api import sync_playwright, expect\n"
@@ -212,6 +222,25 @@ def _build_script(query, test_cases, url, visible, ui_details=""):
         "exact message wording they give; when a test case's example data (IDs, product codes) is "
         "not available in the app, use the closest documented value instead\n"
         "- Every assertion must be final and correct - no placeholder or 'to be refined' assertions\n"
+        "- Use ONLY real Playwright Python assertions: to_have_text, to_contain_text, to_have_count, "
+        "to_be_visible, to_be_hidden, to_be_enabled, to_be_disabled, to_have_value, to_have_url, "
+        "to_have_attribute (and their not_to_ forms). There is NO to_have_count_at_least or similar; "
+        "for 'at least N' use expect(locator.nth(N - 1)).to_be_visible()\n"
+        "- to_have_text / to_contain_text take a string or re.compile(...) - never a lambda or "
+        "function\n"
+        "- Keep every string literal, including f-strings, on a single line\n"
+        "- Never guess message wording: if the UI details do not give a message, assert on a "
+        "documented element (e.g. the status) instead\n"
+        "- Playwright locators are STRICT: an assertion on a locator that matches more than one "
+        "element fails. When several elements can match (table rows, audit entries, line items), "
+        "first narrow to ONE row by its unique text, then assert inside it, e.g. "
+        "expect(page.locator('#audit-log .audit-entry', has_text='Order cancelled')"
+        ".locator('.audit-user')).to_have_text('csr1'). Never filter only by a value that can "
+        "repeat (such as a user ID); use .first / .nth(i) or to_have_count when needed\n"
+        "- Only assert a total count (to_have_count on a list or table) when the UI details state "
+        "that exact count for that exact scenario; otherwise assert that the specific expected "
+        "row exists. Seeded/pre-existing records may have different history than records the "
+        "test creates itself\n"
         "- Each test function must navigate to the page it needs itself (do not rely on the page "
         "left by a previous test), and use unique new IDs so tests do not collide\n"
         "- Skip steps that cannot be automated against the given URL and add a comment why\n"
@@ -219,27 +248,37 @@ def _build_script(query, test_cases, url, visible, ui_details=""):
         "- NO destructive actions (no os, subprocess, shutil, file writes, shell, eval, exec)\n"
         "- Return ONLY runnable code, no markdown fences, no explanation."
     )
-    user = f"Requirement area: {query}\nStart URL: {url}\n\nTEST CASES:\n{test_cases}\n\n"
-    if ui_details:
-        user += f"APP UI DETAILS (pages, selectors, test data):\n{ui_details}\n\n"
-    user += "Generate the full runnable Playwright script."
-    code = ""
+
+
+def _llm_code(system, user):
+    """Ask the LLM for a script and strip markdown fences; retries once on empty output."""
     for _ in range(2):  # the model occasionally returns no content; ask once more
         code = _ask(system, user, temperature=0) or ""
         code = re.sub(r"^```[a-zA-Z]*\n?", "", code.strip())
         code = re.sub(r"\n?```$", "", code.strip()).strip()
         if code:
-            break
-    if not code:
-        raise RuntimeError("The LLM returned an empty Playwright script. Please try again.")
+            return code
+    raise RuntimeError("The LLM returned an empty Playwright script. Please try again.")
 
+
+def _build_script(query, test_cases, url, visible, ui_details=""):
+    """LLM-generate the Playwright script for the test cases and save it. Returns (code, path)."""
+    user = f"Requirement area: {query}\nStart URL: {url}\n\nTEST CASES:\n{test_cases}\n\n"
+    if ui_details:
+        user += f"APP UI DETAILS (pages, selectors, test data):\n{ui_details}\n\n"
+    user += "Generate the full runnable Playwright script."
+    code = _llm_code(_script_rules(visible), user)
+    return code, _save_script(query, code)
+
+
+def _save_script(query, code):
     os.makedirs(_GENERATED_DIR, exist_ok=True)
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", query.lower())[:40].strip("_") or "script"
     path = os.path.join(_GENERATED_DIR,
                         f"test_{slug}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.py")
     with open(path, "w", encoding="utf-8") as f:
         f.write(code)
-    return code, path
+    return path
 
 
 def _requirement(query, url, test_cases):
@@ -279,21 +318,108 @@ def fetch_ui_map(url):
         return {"error": f"Could not load {map_url}: {e}. Paste your app's UI details instead."}
 
 
+def check_playwright_api(code):
+    """Guardrail 1b - static API check: the script must parse, and every
+    expect(...).<assertion>() must exist in the installed Playwright.
+    Catches invented calls such as to_have_count_at_least() before approval."""
+    import ast
+    from playwright.sync_api import APIResponseAssertions, LocatorAssertions, PageAssertions
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        return [f"Python syntax error on line {e.lineno}: {e.msg}"]
+    valid = {n for cls in (LocatorAssertions, PageAssertions, APIResponseAssertions)
+             for n in dir(cls) if n.startswith(("to_", "not_to_"))}
+    unknown, bad_args = set(), set()
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Call)
+                and isinstance(node.value.func, ast.Name) and node.value.func.id == "expect"
+                and node.attr not in valid):
+            unknown.add(node.attr)
+        # expect(...).to_have_text(lambda ...) - assertions take a value, not a function
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Call)
+                and isinstance(node.func.value.func, ast.Name)
+                and node.func.value.func.id == "expect"
+                and any(isinstance(a, ast.Lambda) for a in node.args)):
+            bad_args.add(node.func.attr)
+    return ([f"expect(...).{name}() does not exist in Playwright" for name in sorted(unknown)]
+            + [f"expect(...).{name}() was given a lambda; it needs a string or re.compile(...)"
+               for name in sorted(bad_args)])
+
+
+_MAX_REPAIRS = 3
+
+
+def _compact_traceback(output, limit=1500):
+    """Keep the script's own frames and the error; drop Playwright/library internals."""
+    kept, skip = [], False
+    for line in output.splitlines():
+        if line.startswith('  File "'):
+            skip = "site-packages" in line
+        elif not line.startswith(" "):
+            skip = False
+        if not skip and line.strip():
+            kept.append(line)
+    return "\n".join(kept)[-limit:]
+
+
+def repair_script(script_id):
+    """Self-healing step: send the failing script and its exact error back to the LLM
+    for a targeted fix. The fix is a NEW version of the script, so the guardrails and
+    the human approval (Stage 6) are required again before it can run."""
+    rec = _scripts.get(script_id)
+    if not rec:
+        return {"error": "Unknown script. Generate the Playwright script again."}
+    if rec.get("repairs", 0) >= _MAX_REPAIRS:
+        return {"error": f"This script was already fixed {_MAX_REPAIRS} times. Regenerate it "
+                         "or improve the App UI details instead."}
+    guard, run = rec["guardrails"] or {}, rec["execution"] or {}
+    if guard.get("api_errors"):
+        failure = ("The static Playwright API check blocked the script:\n"
+                   + "\n".join(guard["api_errors"]))
+    elif run and not run.get("passed"):
+        failure = "Running the script failed with this output:\n" + _compact_traceback(run["output"])
+    else:
+        return {"error": "Nothing to fix: the script has not failed the API check or execution."}
+    # the test cases are left out: the script already encodes them, and the free tier
+    # caps a single request at 8,000 tokens
+    user = f"Requirement area: {rec['query']}\nStart URL: {rec['url']}\n\n"
+    if rec["ui_details"]:
+        user += f"APP UI DETAILS (pages, selectors, test data):\n{rec['ui_details']}\n\n"
+    user += (f"CURRENT SCRIPT:\n{rec['code']}\n\nFAILURE:\n{failure}\n\n"
+             "Fix the script so this failure cannot happen. Change only what is needed and keep "
+             "the parts that work. Where an assertion contradicts the APP UI DETAILS, follow the "
+             "UI details. Return the full corrected script.")
+    try:
+        code = _llm_code(_script_rules(rec["visible"]), user)
+    except RuntimeError as e:
+        return {"error": str(e)}
+    path = _save_script(rec["query"], code)
+    with _scripts_lock:
+        rec.update({"code": code, "sha": _sha(code), "path": path, "guardrails": None,
+                    "approval": None, "execution": None, "repairs": rec.get("repairs", 0) + 1})
+    return {"script_id": script_id, "code": code, "path": path, "repairs": rec["repairs"],
+            "max_repairs": _MAX_REPAIRS, "fixed_failure": failure[:600]}
+
+
 def run_guardrails(script_id):
     rec = _scripts.get(script_id)
     if not rec:
         return {"error": "Unknown script. Generate the Playwright script again."}
     safe, hits = guardrail_safety(rec["code"])
+    api_errors = check_playwright_api(rec["code"]) if safe else []
     score, reason = (0, "Skipped - safety scan failed.")
-    if safe:
-        from openai import RateLimitError
-        try:  # guardrail_match (Stage 5) uses its own client, so map its 429 here
+    if api_errors:
+        score, reason = (0, "Skipped - script uses Playwright APIs that do not exist.")
+    if safe and not api_errors:
+        try:  # guardrail_match (Stage 5) now calls _ask, which retries per-minute limits
             score, reason = guardrail_match(rec["requirement"], rec["code"])
-        except RateLimitError as e:
-            return {"error": _quota_message(e) or
-                    "Groq per-minute rate limit reached. Wait a minute and run the guardrail again."}
-    result = {"safe": safe, "hits": hits, "match_score": score, "match_reason": reason,
-              "threshold": _MATCH_THRESHOLD, "passed": safe and score >= _MATCH_THRESHOLD}
+        except LLMQuotaError as e:
+            return {"error": str(e)}
+    result = {"safe": safe, "hits": hits, "api_errors": api_errors,
+              "match_score": score, "match_reason": reason, "threshold": _MATCH_THRESHOLD,
+              "passed": safe and not api_errors and score >= _MATCH_THRESHOLD}
     with _scripts_lock:
         rec["guardrails"] = result
         rec["approval"] = None  # any earlier approval no longer applies

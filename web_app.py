@@ -1533,6 +1533,12 @@ def ai_testgen_approve():
         data.get("script_id") or "", data.get("decision") or "",
         (data.get("reviewer") or "").strip(), (data.get("note") or "").strip()))
 
+@app.route("/ai-testgen/repair", methods=["POST"])
+def ai_testgen_repair():
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    return jsonify(ai_testgen.repair_script(data.get("script_id") or ""))
+
 @app.route("/ai-testgen/execute", methods=["POST"])
 def ai_testgen_execute():
     from flask import request, jsonify

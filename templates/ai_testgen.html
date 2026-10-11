@@ -110,13 +110,16 @@
       <div id="pwCard" class="card card-blue hidden">
         <h3>🎭 Generated Playwright Script</h3>
         <p><small>Saved to: <span id="pwPath"></span></small></p>
+        <p id="pwVersion" class="hidden" style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:10px;white-space:pre-wrap;"></p>
         <pre id="pwCode"></pre>
       </div>
 
       <div id="grCard" class="card card-amber hidden">
         <h3>🛡️ Guardrails <span class="score-badge" id="grBadge">-</span></h3>
         <div class="gr-line" id="grSafety"></div>
+        <div class="gr-line" id="grApi"></div>
         <div class="gr-line" id="grMatch"></div>
+        <button class="btn btn-amber hidden" type="button" id="btnFixGr" onclick="repairScript()" style="padding:8px 14px;">🔧 Fix script with AI</button>
       </div>
 
       <div id="hvCard" class="card card-purple hidden">
@@ -153,6 +156,11 @@
       <div id="exCard" class="card hidden">
         <h3>▶️ Execution Result <span class="score-badge" id="exBadge">-</span></h3>
         <pre id="exOutput"></pre>
+        <div id="exFix" class="hidden">
+          <p><small>The AI can fix the script using this exact error. The fixed script is a new version:
+          it goes through the guardrails and needs your approval again before it runs.</small></p>
+          <button class="btn btn-amber" type="button" id="btnFixEx" onclick="repairScript()" style="padding:8px 14px;">🔧 Fix script with AI</button>
+        </div>
       </div>
     </div>
 
@@ -163,7 +171,7 @@
       function busy(msg) {
         $('spinner').textContent = msg ? '⏳ ' + msg : '';
         $('spinner').style.display = msg ? 'block' : 'none';
-        ['btnGen','btnPw','btnGr','btnHv','btnApprove','btnReject'].forEach(id => {
+        ['btnGen','btnPw','btnGr','btnHv','btnApprove','btnReject','btnFixGr','btnFixEx'].forEach(id => {
           const b = $(id);
           if (msg) { b.dataset.wasDisabled = b.disabled; b.disabled = true; }
           else if (b.dataset.wasDisabled !== undefined) { b.disabled = b.dataset.wasDisabled === 'true'; delete b.dataset.wasDisabled; }
@@ -172,7 +180,7 @@
       function show(id, on) { $(id).classList.toggle('hidden', !on); }
       function resetFrom(stage) {
         // stage: 'pw' resets script and later, 'gr' resets guardrails and later, 'hv' resets approval/execution
-        if (stage === 'pw') { scriptId = null; show('pwCard', false); $('btnGr').disabled = true; }
+        if (stage === 'pw') { scriptId = null; show('pwCard', false); show('pwVersion', false); $('btnGr').disabled = true; }
         if (stage === 'pw' || stage === 'gr') { show('grCard', false); $('btnHv').disabled = true; }
         show('hvCard', false); show('exCard', false); $('hvStatus').textContent = '';
       }
@@ -247,6 +255,11 @@
       function renderGuardrails(g) {
         $('grSafety').textContent = (g.safe ? '✅' : '❌') + ' Guardrail 1 — Safety scan: ' +
           (g.safe ? 'PASSED (no forbidden operations)' : 'BLOCKED — forbidden: ' + g.hits.join(', '));
+        const api = g.api_errors || [];
+        $('grApi').textContent = !g.safe ? '⏭️ Guardrail 1b — Playwright API check: skipped (safety scan failed)'
+          : (api.length ? '❌ Guardrail 1b — Playwright API check: BLOCKED — ' + api.join('; ') + '. Use "Fix script with AI" below.'
+                        : '✅ Guardrail 1b — Playwright API check: PASSED (valid Python, only real Playwright assertions)');
+        show('btnFixGr', g.safe && api.length > 0);
         $('grMatch').textContent = (g.match_score >= g.threshold ? '✅' : '❌') +
           ' Guardrail 2 — Requirement match: ' + g.match_score + '/10 (needs ≥ ' + g.threshold + ') — ' + (g.match_reason || '');
         $('grBadge').textContent = g.passed ? 'PASSED' : 'BLOCKED';
@@ -384,8 +397,28 @@
           $('exBadge').textContent = r.passed ? 'PASSED' : 'FAILED';
           $('exBadge').className = 'score-badge ' + (r.passed ? 'pass' : 'fail');
           $('exOutput').textContent = r.output || '(no output)';
+          show('exFix', !r.passed);
           show('exCard', true);
           $('exCard').scrollIntoView({behavior:'smooth'});
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
+      }
+
+      async function repairScript() {
+        if (!scriptId) return;
+        busy('Fixing the script with AI using the exact error... (10-30s)');
+        try {
+          const r = await post('/ai-testgen/repair', {script_id: scriptId});
+          busy('');
+          if (r.error) { alert('Error: ' + r.error); return; }
+          $('pwCode').textContent = r.code;
+          $('pwPath').textContent = r.path;
+          $('pwVersion').textContent = '🔧 Fixed with AI (repair ' + r.repairs + ' of ' + r.max_repairs + '). ' +
+            'This is a new version: run Generate Guardrail, then Human Validation Approval again.\n\nFixed failure:\n' +
+            r.fixed_failure;
+          show('pwVersion', true);
+          resetFrom('gr');
+          $('btnGr').disabled = false;
+          $('pwCard').scrollIntoView({behavior:'smooth'});
         } catch (e) { busy(''); alert('Request failed: ' + e); }
       }
     </script>

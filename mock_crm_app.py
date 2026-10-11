@@ -400,7 +400,26 @@ ORDER DETAIL  {base}/orders/<ORDER_ID>
   #edit-order-link (only when status New or Pending)
   #cancel-order-button
   #approval-status "Cancellation pending supervisor approval." ; #approve-cancel-button (supervisor only)
-  Audit log: table #audit-log, rows .audit-entry, cells .audit-user and .audit-action
+  Audit log: table #audit-log, rows .audit-entry (oldest first), cells .audit-user and .audit-action
+    .audit-user shows the USER ID that acted ("csr1" or "sup1"), never the display name
+    .audit-action is exactly one of:
+      "Order created" | "Order modified" | "Order cancelled"
+      "Cancellation requested - awaiting supervisor approval"
+      "Cancellation approved by supervisor - order cancelled"
+    Seeded orders ORD-0001..ORD-0005 start with an EMPTY audit log (they have NO "Order created" row).
+    Exact audit row count after each scenario (rows oldest first):
+      Order created in this session, then cancelled by csr1 -> 2: ("csr1","Order created"), ("csr1","Order cancelled")
+      Seeded ORD-0001 (New) or ORD-0002 (Pending) cancelled by csr1 -> 1: ("csr1","Order cancelled")
+      Seeded ORD-0003 after csr1 requests cancellation -> 1: ("csr1","Cancellation requested - awaiting supervisor approval")
+      Seeded ORD-0003 after sup1 approves -> 2: the request row above + ("sup1","Cancellation approved by supervisor - order cancelled")
+      Seeded ORD-0004 (Completed) or ORD-0005 (Cancelled) after a refused cancel -> 0 rows
+      Order created in this session, then modified by csr1 -> 2: ("csr1","Order created"), ("csr1","Order modified")
+    Check a specific row with e.g. page.locator("#audit-log .audit-entry", has_text="Order cancelled")
+    WHO did an action: narrow to that action's row first, then check its user cell:
+      expect(page.locator("#audit-log .audit-entry", has_text="Order cancelled").locator(".audit-user")).to_have_text("csr1")
+    Do NOT assert on ".audit-user" filtered by a user ID alone - the same user usually has several
+    rows (e.g. "Order created" and "Order cancelled"), so that locator matches 2+ cells and fails
+    Playwright's strict mode. Row count: expect(page.locator("#audit-log .audit-entry")).to_have_count(n)
   Messages: #success-message, #error-message, #info-message
 
 EDIT ORDER  {base}/orders/<ORDER_ID>/edit
@@ -420,6 +439,12 @@ CANCELLATION RULES
                   then log out, log in as sup1, open the order, click #approve-cancel-button ->
                   #success-message "Cancellation of order <id> approved. Order cancelled with no charges."
   Completed -> #error-message "Order <id> is Completed and cannot be cancelled. Please follow the returns process."
+               status stays "Completed", charges unchanged
+  Already Cancelled (e.g. ORD-0005) -> #error-message "Order <id> is already cancelled." ; status stays "Cancelled"
+  There is NO confirmation dialog: clicking #cancel-order-button cancels immediately.
+  Provisioning audit trail after approval (2 rows): ("csr1", "Cancellation requested - awaiting supervisor approval"),
+               ("sup1", "Cancellation approved by supervisor - order cancelled")
+  CSRs never see #approve-cancel-button; only sup1 does.
 """
 
 
