@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reliability Addendum</title>
+<style>
+  :root { --ink:#0f172a; --muted:#475569; --rule:#cbd5e1; --accent:#1d4ed8; --good:#047857; --bad:#b91c1c; --tint:#f1f5f9; }
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: var(--ink); background:#fff; font-size: 10.5pt; line-height: 1.45; margin: 0; }
+  main { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  h1 { font-size: 20pt; margin: 0 0 4px; }
+  .byline { color: var(--muted); margin: 0 0 14px; }
+  h2 { font-size: 13.5pt; margin: 22px 0 6px; padding-bottom: 3px; border-bottom: 1.5px solid var(--rule); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14px 0 4px; break-after: avoid; }
+  p { margin: 6px 0; }
+  .lead { font-size: 11pt; background: var(--tint); border-left: 4px solid var(--accent); padding: 10px 12px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.5pt; break-inside: auto; }
+  th, td { border: 1px solid var(--rule); padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: var(--tint); }
+  tr { break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: var(--tint); padding: 0 3px; border-radius: 3px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.8pt; background: var(--tint); border: 1px solid var(--rule); padding: 8px 10px; white-space: pre-wrap; break-inside: avoid; }
+  .ok { color: var(--good); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
+  ol, ul { margin: 6px 0 6px 20px; padding: 0; } li { margin: 3px 0; }
+  .qa { break-inside: avoid; margin: 10px 0; }
+  .qa p:first-child { font-weight: 600; margin-bottom: 2px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; font-size: 9.5pt; }
+  .flow span { border: 1px solid var(--rule); border-radius: 6px; padding: 4px 8px; background: #fff; }
+  .flow span.new { border: 2px solid var(--accent); background: #eff6ff; font-weight: 600; }
+  .flow b { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+<h1>Addendum: Making LLM-Written Tests Reliable</h1>
+<p class="byline">Companion to the Agentic AI Test Generation interview guide · results from 10 October 2026 · commit <code>2ac33c3</code></p>
+
+<p class="lead"><strong>Key point for the interview:</strong> passing the guardrails did not mean the script would run.
+Order-cancellation scripts kept failing at runtime, and almost every run failed in a new way
+(5 different mistakes across 6 scripts). I fixed this with three
+layers: a static Playwright API check, a precise UI map, and an AI repair step that always goes back through the
+guardrails and human approval. Afterwards, fresh scripts passed on the first try (2 of 2), and the repair step
+recovered 2 of 3 broken scripts.</p>
+
+<h2>1. The problem: "guardrail passed, execution failed"</h2>
+<p>Guardrail 2 (the LLM judge) checks whether a script <em>tests the right thing</em>, not whether it <em>runs</em>.
+The LLM kept writing assertions that looked plausible but were wrong. These are real failures from the logs:</p>
+<table>
+  <tr><th>Script</th><th>LLM mistake</th><th>Why it failed</th></tr>
+  <tr><td><code>075316</code></td><td><code>expect(rows).to_have_count_at_least(1)</code></td><td>Invented API: no such Playwright assertion exists</td></tr>
+  <tr><td><code>120127</code></td><td><code>expect(page.locator(".audit-user", has_text="csr1")).to_be_visible()</code></td><td>Strict-mode violation: two audit rows by <code>csr1</code> ("Order created" and "Order cancelled"), so the locator matched 2 cells</td></tr>
+  <tr><td><code>121501</code>, <code>121539</code></td><td><code>to_have_count(2)</code> after cancelling seeded order ORD-0002</td><td>Seeded orders start with an empty audit log, so there was 1 row. The LLM over-generalised a "2 rows" example in the UI map</td></tr>
+  <tr><td><code>121747</code></td><td>f-string split across two lines</td><td>Python syntax error: the script could not even start</td></tr>
+  <tr><td><code>121816</code></td><td><code>to_have_text(lambda txt: ...)</code></td><td>Assertions take a string or regex, not a function</td></tr>
+</table>
+<p>Earlier runs showed the same pattern: guessed message wording, "placeholder" assertions, and the display name
+("Asha") used where the app shows the user ID ("csr1").</p>
+<p><strong>Lesson:</strong> patching the prompt for each mistake is whack-a-mole. The next run finds a new one.
+The fix needed to be structural.</p>
+
+<h2>2. The fix: three layers</h2>
+
+<h3>Layer 1: Guardrail 1b, a static Playwright API check (deterministic, free, instant)</h3>
+<ul>
+  <li>Parses the script with Python's <code>ast</code> module. A syntax error blocks it.</li>
+  <li>Every <code>expect(...).method()</code> must exist in the <em>installed</em> Playwright. The list of valid names is
+      read from Playwright's own <code>LocatorAssertions</code>, <code>PageAssertions</code> and
+      <code>APIResponseAssertions</code> classes, so it stays correct when Playwright is upgraded.</li>
+  <li>Blocks a lambda passed to an assertion.</li>
+  <li>Runs after the safety scan and <strong>before</strong> the LLM judge and the human. A broken script never reaches a reviewer.</li>
+</ul>
+<p>Result on every script from the day: it blocked all 3 static mistakes (<code>075316</code>, <code>121747</code>, <code>121816</code>)
+and passed every script that later ran successfully. There were no false positives.</p>
+
+<h3>Layer 2: a precise UI map (the contract between the app and the generator)</h3>
+<ul>
+  <li>The exact text of every field and message, e.g. <code>.audit-user</code> shows the user ID, never the display name.</li>
+  <li>The exact audit-row count for each scenario (8 scenarios), each verified against the running app before publishing.</li>
+  <li>A worked example of the strict-mode-safe pattern: narrow to one row first, then assert inside it.</li>
+</ul>
+<pre>expect(page.locator("#audit-log .audit-entry", has_text="Order cancelled")
+       .locator(".audit-user")).to_have_text("csr1")</pre>
+<p>A one-line correction of exactly this kind made the user's failing script <code>120127</code> pass all three cancellation tests,
+which proved the diagnosis before any LLM call.</p>
+
+<h3>Layer 3: "Fix script with AI" (self-healing, with a human still in the loop)</h3>
+<ul>
+  <li>Appears when execution fails or Guardrail 1b blocks a script.</li>
+  <li>Sends the current script plus the <strong>exact error</strong> to the LLM. LLMs are far more reliable at fixing a specific
+      traceback than at writing a perfect script first time.</li>
+  <li>The traceback is compacted to the script's own frames plus the error, dropping Playwright's internal frames
+      (2,121 → 1,273 characters). This was needed because the first repair request was 8,340 tokens, over Groq's 8,000-token-per-minute free tier.</li>
+  <li>The fix is a <strong>new version</strong>: approval is cleared, and the guardrails and the human approval are required again.</li>
+  <li>Capped at 3 repairs per script to bound cost and stop endless loops.</li>
+</ul>
+
+<h2>3. Results (10 October 2026, mock CRM)</h2>
+<table>
+  <tr><th>Scenario</th><th>What happened</th><th>Outcome</th></tr>
+  <tr><td>Fresh generation with the new rules, run 1</td><td>Guardrail 9/10</td><td class="ok">Passed first try</td></tr>
+  <tr><td>Fresh generation with the new rules, run 2</td><td>Guardrail 8/10</td><td class="ok">Passed first try</td></tr>
+  <tr><td>Repair: strict-mode script <code>120127</code></td><td>1 repair; re-guardrail 7/10; re-approved</td><td class="ok">Passed</td></tr>
+  <tr><td>Repair: syntax-error script <code>121747</code></td><td>Repair 1 fixed the syntax; repairs 2–3 fixed two runtime errors; guardrail 8/10</td><td class="ok">Passed after 3 repairs</td></tr>
+  <tr><td>Repair: lambda script <code>121816</code></td><td>Each fix drifted further from the requirements; by repair 3 the judge scored 5/10</td><td class="bad">Blocked by guardrail; regenerate instead</td></tr>
+</table>
+<p><strong>Why the last row is a success story:</strong> the repair loop is not trusted blindly. When "fixing" weakened the test,
+the requirement-match guardrail caught the drift and refused to let it reach a human.</p>
+
+<h2>4. The pipeline now</h2>
+<div class="flow">
+  <span>RAG + LangGraph test cases</span><b>→</b><span>Playwright script (UI map)</span><b>→</b>
+  <span>G1 safety scan</span><b>→</b><span class="new">G1b API check</span><b>→</b><span>G2 requirement match ≥ 7</span><b>→</b>
+  <span>Stage 6 DeepEval per case</span><b>→</b><span>Human approval</span><b>→</b><span>Execute</span>
+</div>
+<p>On failure: <span class="flow" style="display:inline-flex"><span class="new">Fix script with AI</span><b>→</b><span>back to G1</span></span>,
+with a new version, fresh guardrails and fresh approval (max 3).</p>
+
+<h2>5. Operational lessons (Groq free tier)</h2>
+<table>
+  <tr><th>Limit hit</th><th>Symptom</th><th>Fix</th></tr>
+  <tr><td>200,000 tokens/day on gpt-oss-120b</td><td>Stage 6 table blank; page hung on retries</td><td>Fail fast with "try again in …"; moved the DeepEval judge to gpt-oss-20b (separate quota)</td></tr>
+  <tr><td>8,000 tokens/minute</td><td>Bursts of 429 errors during DeepEval scoring</td><td>Honour Groq's <code>retry-after</code> (max 30 s); pause 3 s between cases</td></tr>
+  <tr><td>One request over 8,000 tokens (HTTP 413)</td><td>Repair request crashed</td><td>Compacted traceback; readable error instead of a crash</td></tr>
+  <tr><td>Stage 5 judge had its own client</td><td>Guardrail errored right after a repair call</td><td>Routed it through the same rate-limit-aware call path</td></tr>
+</table>
+
+<h2>6. Interview questions on this part</h2>
+<div class="qa"><p>Q: Your guardrails passed but the test still failed. Doesn't that mean the guardrails don't work?</p>
+<p>They checked different things. The LLM judge checks intent ("does this test the requirement?"). Runtime correctness
+needs a different check. I added a deterministic layer, the Playwright API check, for mistakes that can be caught statically.
+For the rest, execution itself is the final test, and the repair step closes the loop.</p></div>
+<div class="qa"><p>Q: Isn't letting the AI fix its own test dangerous? It could just weaken the assertions until they pass.</p>
+<p>That is exactly why every fix is a new version that must pass the guardrails and be approved by a human again. In my results,
+one repair chain drifted: the requirement-match judge dropped to 5/10 and blocked it. Repairs are also capped at 3.</p></div>
+<div class="qa"><p>Q: Why not just write a better prompt?</p>
+<p>I did tighten the rules, but each regeneration found a new mistake. Prompts reduce errors; they don't eliminate them.
+Reliable systems pair generation with verification (static checks plus execution) and a feedback loop.</p></div>
+<div class="qa"><p>Q: What made the biggest difference?</p>
+<p>The UI map. When the generator was told the exact selectors, texts and counts, first-try pass rates went up. Most failures
+were the LLM guessing something the map did not state, such as display name versus user ID, or seeded-order history.</p></div>
+<div class="qa"><p>Q: How would you take this further in production?</p>
+<p>Generate the UI map automatically from the app (DOM capture or an accessibility snapshot) instead of writing it by hand;
+run execution in an isolated container; track first-try and after-repair pass rates per requirement area;
+and use a paid LLM tier to remove the quota constraints.</p></div>
+</main>
+</body>
+</html>
