@@ -38,6 +38,14 @@
       .check { display:flex; gap:6px; align-items:center; font-size:14px; white-space:nowrap; padding-bottom:10px; }
       .gr-line { margin:6px 0; }
       .hidden { display:none; }
+      .btn-teal { background:linear-gradient(90deg, #0f766e 0%, #14b8a6 100%); }
+      .card-teal { background:#f0fdfa; border:1px solid #0f766e; }
+      .code-wrap { position:relative; }
+      .copy-btn { position:absolute; top:8px; right:8px; background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+      pre.code-block { background:#0f172a; color:#e2e8f0; border:1px solid #1e293b; max-height:560px; white-space:pre; overflow:auto; line-height:1.5; tab-size:4; }
+      pre.code-block code { font-family: ui-monospace, Consolas, monospace; }
+      .hl-k { color:#c084fc; } .hl-s { color:#86efac; } .hl-c { color:#94a3b8; font-style:italic; }
+      .hl-n { color:#fdba74; } .hl-f { color:#7dd3fc; } .hl-b { color:#fcd34d; } .hl-d { color:#f9a8d4; }
       .sc-table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; }
       .sc-table th, .sc-table td { border:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
       .sc-table th { background:#ede9fe; }
@@ -83,8 +91,26 @@
           <button class="btn btn-blue" id="btnPw" onclick="generatePlaywright()" disabled>Generate Playwright Script</button>
           <button class="btn btn-amber" id="btnGr" onclick="runGuardrails()" disabled>Generate Guardrail</button>
           <button class="btn btn-purple" id="btnHv" onclick="openApproval()" disabled>Human Validation Approval</button>
+          <button class="btn btn-teal" id="btnSe" onclick="generateSelenium()">Generate Selenium Script</button>
         </div>
         <div class="spinner" id="spinner"></div>
+      </div>
+
+      <div id="seCard" class="card card-teal hidden">
+        <h3>🧪 Generated Selenium Script <span class="score-badge" id="seBadge">-</span></h3>
+        <p><small>Intent: <strong id="seIntent"></strong> · test cases scored <span id="seScore"></span> ·
+        saved to <span id="sePath"></span></small></p>
+        <p id="seNote" class="hidden" style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:10px;"></p>
+        <p id="seVersion" class="hidden" style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:10px;white-space:pre-wrap;"></p>
+        <div class="code-wrap">
+          <button class="copy-btn" type="button" id="btnSeCopy" onclick="copySelenium()">Copy</button>
+          <pre class="code-block"><code id="seCode"></code></pre>
+        </div>
+        <details style="margin-top:10px;">
+          <summary style="cursor:pointer;color:#0f766e;font-weight:600;">Test cases this script was generated from (RAG + LangGraph)</summary>
+          <pre id="seCases"></pre>
+        </details>
+        <p><small>Next: <strong>Generate Guardrail</strong> → <strong>Human Validation Approval</strong> → <strong>Approve &amp; Execute</strong>. The script runs only after the guardrails pass (safety scan, real Selenium <code>EC</code>/<code>By</code> names, URL whitelist, requirement match) and you approve it. If it fails, <strong>Fix script with AI</strong> creates a new version that needs approval again.</small></p>
       </div>
 
       <div id="results" class="hidden">
@@ -118,6 +144,7 @@
         <h3>🛡️ Guardrails <span class="score-badge" id="grBadge">-</span></h3>
         <div class="gr-line" id="grSafety"></div>
         <div class="gr-line" id="grApi"></div>
+        <div class="gr-line hidden" id="grUrl"></div>
         <div class="gr-line" id="grMatch"></div>
         <button class="btn btn-amber hidden" type="button" id="btnFixGr" onclick="repairScript()" style="padding:8px 14px;">🔧 Fix script with AI</button>
       </div>
@@ -167,11 +194,17 @@
     <script>
       const $ = id => document.getElementById(id);
       let lastQuery = '', lastTestCases = '', scriptId = null;
+      let activeKind = 'playwright';   // which script the guardrail/approval/execute cards act on
+      const toolName = () => activeKind === 'selenium' ? 'Selenium' : 'Playwright';
+      function setActiveScript(code, path) {   // update the code view of the active script
+        if (activeKind === 'selenium') { seleniumCode = code; $('seCode').innerHTML = highlightPython(code); $('sePath').textContent = path; }
+        else { $('pwCode').textContent = code; $('pwPath').textContent = path; }
+      }
 
       function busy(msg) {
         $('spinner').textContent = msg ? '⏳ ' + msg : '';
         $('spinner').style.display = msg ? 'block' : 'none';
-        ['btnGen','btnPw','btnGr','btnHv','btnApprove','btnReject','btnFixGr','btnFixEx'].forEach(id => {
+        ['btnGen','btnPw','btnGr','btnHv','btnApprove','btnReject','btnFixGr','btnFixEx','btnSe'].forEach(id => {
           const b = $(id);
           if (msg) { b.dataset.wasDisabled = b.disabled; b.disabled = true; }
           else if (b.dataset.wasDisabled !== undefined) { b.disabled = b.dataset.wasDisabled === 'true'; delete b.dataset.wasDisabled; }
@@ -180,7 +213,7 @@
       function show(id, on) { $(id).classList.toggle('hidden', !on); }
       function resetFrom(stage) {
         // stage: 'pw' resets script and later, 'gr' resets guardrails and later, 'hv' resets approval/execution
-        if (stage === 'pw') { scriptId = null; show('pwCard', false); show('pwVersion', false); $('btnGr').disabled = true; }
+        if (stage === 'pw') { scriptId = null; show('pwCard', false); show('pwVersion', false); show('seCard', false); show('seVersion', false); $('btnGr').disabled = true; }
         if (stage === 'pw' || stage === 'gr') { show('grCard', false); $('btnHv').disabled = true; }
         show('hvCard', false); show('exCard', false); $('hvStatus').textContent = '';
       }
@@ -224,7 +257,7 @@
       async function generatePlaywright() {
         const url = $('url').value.trim();
         if (!/^https?:\/\//i.test(url)) { alert('Enter the target application URL (http:// or https://).'); $('url').focus(); return; }
-        resetFrom('pw');
+        resetFrom('pw'); activeKind = 'playwright';
         busy('Generating Playwright script from the test cases... (may take 10-20s)');
         try {
           const data = await post('/ai-testgen/playwright', {query: lastQuery, test_cases: lastTestCases, url,
@@ -256,10 +289,17 @@
         $('grSafety').textContent = (g.safe ? '✅' : '❌') + ' Guardrail 1 — Safety scan: ' +
           (g.safe ? 'PASSED (no forbidden operations)' : 'BLOCKED — forbidden: ' + g.hits.join(', '));
         const api = g.api_errors || [];
-        $('grApi').textContent = !g.safe ? '⏭️ Guardrail 1b — Playwright API check: skipped (safety scan failed)'
-          : (api.length ? '❌ Guardrail 1b — Playwright API check: BLOCKED — ' + api.join('; ') + '. Use "Fix script with AI" below.'
-                        : '✅ Guardrail 1b — Playwright API check: PASSED (valid Python, only real Playwright assertions)');
-        show('btnFixGr', g.safe && api.length > 0);
+        const tool = g.kind === 'selenium' ? 'Selenium' : 'Playwright';
+        const real = g.kind === 'selenium' ? 'only real Selenium EC / By names' : 'only real Playwright assertions';
+        $('grApi').textContent = !g.safe ? '⏭️ Guardrail 1b — ' + tool + ' API check: skipped (safety scan failed)'
+          : (api.length ? '❌ Guardrail 1b — ' + tool + ' API check: BLOCKED — ' + api.join('; ') + '. Use "Fix script with AI" below.'
+                        : '✅ Guardrail 1b — ' + tool + ' API check: PASSED (valid Python, ' + real + ')');
+        const urls = g.url_errors || [], allowed = (g.allowed_domains || []).join(', ');
+        show('grUrl', g.kind === 'selenium');
+        $('grUrl').textContent = urls.length
+          ? '❌ Guardrail 1c — URL whitelist: BLOCKED — ' + urls.join('; ') + '. Allowed hosts: ' + allowed + '. Use "Fix script with AI" below.'
+          : '✅ Guardrail 1c — URL whitelist: PASSED (script only opens: ' + allowed + ')';
+        show('btnFixGr', g.safe && (api.length > 0 || urls.length > 0));
         $('grMatch').textContent = (g.match_score >= g.threshold ? '✅' : '❌') +
           ' Guardrail 2 — Requirement match: ' + g.match_score + '/10 (needs ≥ ' + g.threshold + ') — ' + (g.match_reason || '');
         $('grBadge').textContent = g.passed ? 'PASSED' : 'BLOCKED';
@@ -362,11 +402,10 @@
               // weak cases were refined: the script was rebuilt and guardrails rerun on the server
               lastTestCases = sc.test_cases;
               $('testcases').textContent = sc.test_cases;
-              $('pwCode').textContent = sc.script.code;
-              $('pwPath').textContent = sc.script.path;
+              setActiveScript(sc.script.code, sc.script.path);
               renderGuardrails(sc.guardrails);
               canApprove = sc.guardrails.passed;
-              if (!canApprove) alert('The rebuilt Playwright script did not pass the guardrails. Approval is blocked — regenerate the script.');
+              if (!canApprove) alert('The rebuilt ' + toolName() + ' script did not pass the guardrails. Approval is blocked — regenerate the script.');
             }
           }
         } catch (e) {
@@ -380,7 +419,7 @@
       async function decide(decision) {
         const reviewer = $('reviewer').value.trim();
         if (!reviewer) { alert('Please enter the reviewer name.'); $('reviewer').focus(); return; }
-        if (decision === 'approve' && !confirm('Approve and execute this Playwright script on the server?')) return;
+        if (decision === 'approve' && !confirm('Approve and execute this ' + toolName() + ' script on the server?')) return;
         busy(decision === 'approve' ? 'Recording approval...' : 'Recording rejection...');
         try {
           const a = await post('/ai-testgen/approve', {script_id: scriptId, decision, reviewer, note: $('note').value.trim()});
@@ -390,7 +429,7 @@
           $('btnApprove').disabled = true; $('btnReject').disabled = true;
           if (a.decision !== 'approved') return;
 
-          busy('Executing the approved Playwright script... (up to 2 min)');
+          busy('Executing the approved ' + toolName() + ' script... (up to 3 min)');
           const r = await post('/ai-testgen/execute', {script_id: scriptId});
           busy('');
           if (r.error) { alert('Error: ' + r.error); return; }
@@ -403,6 +442,71 @@
         } catch (e) { busy(''); alert('Request failed: ' + e); }
       }
 
+      // ---- Selenium script: POST /generate (RAG + LangGraph -> Selenium), shown highlighted ----
+      const PY_KEYWORDS = new Set(('False None True and as assert async await break class continue def del elif else ' +
+        'except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield').split(' '));
+      const PY_BUILTINS = new Set('print len range str int float bool list dict set tuple isinstance Exception AssertionError'.split(' '));
+      function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function highlightPython(code) {
+        // comment | string (optional prefix, triple or single line) | number | decorator | identifier
+        const re = /(#[^\n]*)|((?:[rRbBfFuU]{0,2})(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'))|(\b\d+(?:\.\d+)?\b)|(@[A-Za-z_][\w.]*)|([A-Za-z_]\w*)/g;
+        let out = '', last = 0, m;
+        while ((m = re.exec(code)) !== null) {
+          out += escapeHtml(code.slice(last, m.index));
+          const tok = m[0];
+          let cls = '';
+          if (m[1]) cls = 'c'; else if (m[2]) cls = 's'; else if (m[3]) cls = 'n'; else if (m[4]) cls = 'd';
+          else if (PY_KEYWORDS.has(tok)) cls = 'k';
+          else if (PY_BUILTINS.has(tok)) cls = 'b';
+          else if (code[re.lastIndex] === '(') cls = 'f';
+          out += cls ? '<span class="hl-' + cls + '">' + escapeHtml(tok) + '</span>' : escapeHtml(tok);
+          last = re.lastIndex;
+        }
+        return out + escapeHtml(code.slice(last));
+      }
+
+      let seleniumCode = '';
+      async function generateSelenium() {
+        const intent = $('query').value.trim();
+        if (!intent) { alert('Please enter a requirement area (the intent).'); $('query').focus(); return; }
+        const url = $('url').value.trim();
+        if (url && !/^https?:\/\//i.test(url)) { alert('The target URL must start with http:// or https:// (or leave it empty).'); $('url').focus(); return; }
+        show('results', false); $('btnPw').disabled = true; resetFrom('pw');
+        busy('Running RAG retrieval → LangGraph agent loop → Selenium script generation... (may take 30-60s)');
+        try {
+          const d = await post('/generate', {intent, url, ui_details: $('uiDetails').value.trim(), visible: $('visible').checked});
+          busy('');
+          if (d.error) { alert('Error: ' + d.error); return; }
+          activeKind = 'selenium'; scriptId = d.script_id;
+          setActiveScript(d.code, d.path);   // highlighted; every token is HTML-escaped
+          $('seIntent').textContent = d.intent;
+          $('seScore').textContent = d.score + '/10 after ' + d.attempts + ' attempt(s)';
+          $('seCases').textContent = d.test_cases;
+          // the test cases behind this script become the page's current test cases
+          lastQuery = d.intent; lastTestCases = d.test_cases;
+          $('score').textContent = d.score + '/10';
+          $('attempts').textContent = ' (after ' + d.attempts + ' attempt(s))';
+          $('feedback').textContent = d.feedback || '';
+          $('testcases').textContent = d.test_cases;
+          $('context').textContent = d.context;
+          show('results', true);
+          $('btnPw').disabled = false; $('btnGr').disabled = false;
+          $('seBadge').textContent = 'Python · Selenium 4'; $('seBadge').className = 'score-badge';
+          const notes = [];
+          if (!d.used_ui_details) notes.push('ℹ️ No App UI details were supplied, so the selectors are placeholders marked TODO. ' +
+            'Fill in the Target URL and App UI details (or click "Load UI map from app") for real selectors.');
+          $('seNote').textContent = notes.join('\n'); $('seNote').style.whiteSpace = 'pre-wrap';
+          show('seNote', notes.length > 0);
+          $('btnSeCopy').textContent = 'Copy';
+          show('seCard', true);
+          $('seCard').scrollIntoView({behavior:'smooth'});
+        } catch (e) { busy(''); alert('Request failed: ' + e); }
+      }
+      async function copySelenium() {
+        try { await navigator.clipboard.writeText(seleniumCode); $('btnSeCopy').textContent = 'Copied ✓'; }
+        catch (e) { alert('Copy failed: ' + e); }
+      }
+
       async function repairScript() {
         if (!scriptId) return;
         busy('Fixing the script with AI using the exact error... (10-30s)');
@@ -410,15 +514,15 @@
           const r = await post('/ai-testgen/repair', {script_id: scriptId});
           busy('');
           if (r.error) { alert('Error: ' + r.error); return; }
-          $('pwCode').textContent = r.code;
-          $('pwPath').textContent = r.path;
-          $('pwVersion').textContent = '🔧 Fixed with AI (repair ' + r.repairs + ' of ' + r.max_repairs + '). ' +
+          setActiveScript(r.code, r.path);
+          const versionId = activeKind === 'selenium' ? 'seVersion' : 'pwVersion';
+          $(versionId).textContent = '🔧 Fixed with AI (repair ' + r.repairs + ' of ' + r.max_repairs + '). ' +
             'This is a new version: run Generate Guardrail, then Human Validation Approval again.\n\nFixed failure:\n' +
             r.fixed_failure;
-          show('pwVersion', true);
+          show(versionId, true);
           resetFrom('gr');
           $('btnGr').disabled = false;
-          $('pwCard').scrollIntoView({behavior:'smooth'});
+          $(activeKind === 'selenium' ? 'seCard' : 'pwCard').scrollIntoView({behavior:'smooth'});
         } catch (e) { busy(''); alert('Request failed: ' + e); }
       }
     </script>

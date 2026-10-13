@@ -1490,6 +1490,24 @@ def ai_testgen_run():
     result = ai_testgen.generate_test_cases(query)
     return jsonify(result)
 
+@app.route("/generate", methods=["POST"])
+def ai_testgen_generate_selenium():
+    """intent -> RAG + LangGraph test cases -> Selenium script. The script is registered
+    under a script_id and then uses the same /ai-testgen/guardrails, /score, /approve,
+    /execute and /repair routes as a Playwright script."""
+    import re
+    from flask import request, jsonify
+    data = request.get_json(silent=True) or {}
+    intent = (data.get("intent") or "").strip()
+    if not intent:
+        return jsonify({"error": "No intent provided"}), 400
+    url = (data.get("url") or "").strip()
+    if url and not re.match(r"^https?://", url, re.IGNORECASE):
+        return jsonify({"error": "Target URL must start with http:// or https://"}), 400
+    result = ai_testgen.generate_selenium_script(
+        intent, url, (data.get("ui_details") or "").strip()[:20000], bool(data.get("visible")))
+    return jsonify(result)
+
 @app.route("/ai-testgen/playwright", methods=["POST"])
 def ai_testgen_playwright():
     import re

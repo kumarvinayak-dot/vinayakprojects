@@ -41,16 +41,8 @@ import os
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY or ""
 
 
-# ── Error → hint mapping ──────────────────────────────────────────────────────
-SELENIUM_ERROR_MAP = {
-    "NoSuchElementException":            "Element not found — check locator (ID/CSS/XPATH). Try a more specific selector.",
-    "TimeoutException":                  "Element not visible/clickable in time — increase WebDriverWait timeout or check selector.",
-    "StaleElementReferenceException":    "DOM refreshed after element was found — re-fetch element after page change or AJAX call.",
-    "ElementNotInteractableException":   "Element found but not interactable — scroll into view, wait for visibility, or check if it's hidden.",
-    "ElementClickInterceptedException":  "Another element is overlapping the target — scroll, close overlays, or use JS click.",
-    "NoAlertPresentException":           "Expected alert not present — add wait for alert: WebDriverWait(driver, 5).until(EC.alert_is_present())",
-    "WebDriverException":                "WebDriver crashed or browser closed unexpectedly — restart driver session.",
-}
+# ── Error → hint mapping (shared with the web app, see selenium_errors.py) ────
+from selenium_errors import SELENIUM_ERROR_MAP
 
 
 # ── Driver factory ────────────────────────────────────────────────────────────

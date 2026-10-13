@@ -8,7 +8,10 @@ Layer 3: Human approval gate (mandatory before execution)
 """
 
 import re
-from config import BASE_URL
+from urllib.parse import urlsplit
+
+# This module is deliberately dependency-free (standard library only) so the web app
+# (ai_testgen.py) can reuse layers 1 and 2 without the rest of the selenium-rag stack.
 
 
 # ── Layer 1: Static code analysis ─────────────────────────────────────────────
@@ -40,14 +43,17 @@ def layer1_static_analysis(code: str) -> tuple[bool, list[str]]:
 
 
 def layer2_url_whitelist(code: str) -> tuple[bool, list[str]]:
-    """Ensure all driver.get() calls use whitelisted domains."""
-    violations = []
-    # Find all URLs in driver.get() calls
-    urls = re.findall(r'driver\.get\(["\']([^"\']+)["\']', code)
-    urls += re.findall(r'driver\.get\(BASE_URL', code)  # BASE_URL usage is allowed
+    """Ensure every http(s) URL in the script points at a whitelisted host.
 
-    for url in urls:
-        if url == "BASE_URL" or any(domain in url for domain in ALLOWED_DOMAINS):
+    Checks every URL literal, not only driver.get("...") calls, so URLs held in
+    constants or f-strings (BASE_URL = "http://...") are covered. The host must
+    equal a whitelisted domain or be a subdomain of it: a substring test would
+    accept "https://evil.example/?next=localhost".
+    """
+    violations = []
+    for url in sorted(set(re.findall(r"https?://[^\s\"'<>)\\]+", code))):
+        host = (urlsplit(url).hostname or "").lower()
+        if any(host == d or host.endswith("." + d) for d in ALLOWED_DOMAINS):
             continue
         violations.append(f"URL not in whitelist: {url}")
 

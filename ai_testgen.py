@@ -192,11 +192,29 @@ from stage5_generate_run_guardrails import guardrail_safety, guardrail_match
 # Stage 5's judge has its own Groq client with no rate-limit handling; route it through _ask
 _stage5.ask_llm = lambda system, user: _ask(system, user)
 
+def _load_selenium_rag(name):
+    """Load a module from the selenium-rag folder by path (the folder name has a hyphen,
+    and its module names - config, guardrails - are too generic to put on sys.path)."""
+    import importlib.util
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "selenium-rag", f"{name}.py")
+    spec = importlib.util.spec_from_file_location(f"selenium_rag_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Reused from selenium-rag (both dependency-free): static analysis + URL whitelist, and the
+# exception -> hint map for the repair prompt. Its SeleniumExecutor is NOT used here: it
+# exec()s generated code in-process and re-runs AI repairs without human approval.
+_sel_guardrails = _load_selenium_rag("guardrails")
+_sel_errors = _load_selenium_rag("selenium_errors")
+
 _GENERATED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_tests")
 _MATCH_THRESHOLD = 7
-_EXEC_TIMEOUT = 120
+_EXEC_TIMEOUT = 180
 
-# script_id -> {query, requirement, code, sha, path, guardrails, approval, execution}
+# script_id -> {kind: "playwright"|"selenium", query, requirement, code, sha, path,
+#               guardrails, approval, execution, case_scores}
 _scripts = {}
 _scripts_lock = threading.Lock()
 
@@ -251,14 +269,26 @@ def _script_rules(visible):
 
 
 def _llm_code(system, user):
-    """Ask the LLM for a script and strip markdown fences; retries once on empty output."""
-    for _ in range(2):  # the model occasionally returns no content; ask once more
-        code = _ask(system, user, temperature=0) or ""
-        code = re.sub(r"^```[a-zA-Z]*\n?", "", code.strip())
+    """Ask the LLM for a script and strip markdown fences.
+
+    Groq caps output at 3,072 tokens by default and the model's hidden reasoning counts
+    against it, which silently truncated longer scripts. Ask for as much output as fits
+    under the free tier's 8,000 tokens/minute (prompt + output), and if the answer is
+    still empty or cut off (finish_reason == 'length'), retry once with low reasoning."""
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    prompt_estimate = (len(system) + len(user)) // 3  # deliberately high (~4 chars/token)
+    budget = max(3072, 7800 - prompt_estimate)
+    for effort in (None, "low"):
+        options = {"temperature": 0, "max_completion_tokens": budget}
+        if effort:
+            options["reasoning_effort"] = effort
+        choice = _chat(messages, **options).choices[0]
+        code = re.sub(r"^```[a-zA-Z]*\n?", "", (choice.message.content or "").strip())
         code = re.sub(r"\n?```$", "", code.strip()).strip()
-        if code:
+        if code and choice.finish_reason != "length":
             return code
-    raise RuntimeError("The LLM returned an empty Playwright script. Please try again.")
+    raise RuntimeError("The LLM's script came back empty or cut off (Groq free-tier output "
+                       "limit). Try again, or shorten the App UI details.")
 
 
 def _build_script(query, test_cases, url, visible, ui_details=""):
@@ -294,7 +324,8 @@ def generate_playwright_script(query, test_cases, url, visible=False, ui_details
         return {"error": str(e)}
     script_id = uuid.uuid4().hex
     with _scripts_lock:
-        _scripts[script_id] = {"query": query, "test_cases": test_cases, "url": url,
+        _scripts[script_id] = {"kind": "playwright",
+                               "query": query, "test_cases": test_cases, "url": url,
                                "visible": visible, "ui_details": ui_details,
                                "requirement": _requirement(query, url, test_cases),
                                "code": code, "sha": _sha(code), "path": path,
@@ -351,17 +382,43 @@ def check_playwright_api(code):
 _MAX_REPAIRS = 3
 
 
+_DRIVER_NOISE = ("chromedriver!", "KERNEL32!", "ntdll!", "GetHandleVerifier", "(No symbol)",
+                 "Symbols not available", "DevTools listening", "Stacktrace:")
+
+
 def _compact_traceback(output, limit=1500):
-    """Keep the script's own frames and the error; drop Playwright/library internals."""
+    """Keep the script's own frames and the error; drop Playwright/Selenium library
+    internals and chromedriver's native stack dump."""
     kept, skip = [], False
     for line in output.splitlines():
         if line.startswith('  File "'):
             skip = "site-packages" in line
         elif not line.startswith(" "):
             skip = False
-        if not skip and line.strip():
+        if not skip and line.strip() and not any(n in line for n in _DRIVER_NOISE):
             kept.append(line)
     return "\n".join(kept)[-limit:]
+
+
+def _tool(rec):
+    return "Selenium" if rec.get("kind") == "selenium" else "Playwright"
+
+
+def _rules_for(rec):
+    if rec.get("kind") == "selenium":
+        return _selenium_rules(bool(rec["ui_details"]), rec["visible"])
+    return _script_rules(rec["visible"])
+
+
+def _save_for(rec, code):
+    prefix = "selenium " if rec.get("kind") == "selenium" else ""
+    return _save_script(prefix + rec["query"], code)
+
+
+def _rebuild_for(rec, test_cases):
+    """Regenerate the record's script (same tool) from new test cases. Returns (code, path)."""
+    build = _build_selenium_script if rec.get("kind") == "selenium" else _build_script
+    return build(rec["query"], test_cases, rec["url"], rec["visible"], rec["ui_details"])
 
 
 def repair_script(script_id):
@@ -375,13 +432,17 @@ def repair_script(script_id):
         return {"error": f"This script was already fixed {_MAX_REPAIRS} times. Regenerate it "
                          "or improve the App UI details instead."}
     guard, run = rec["guardrails"] or {}, rec["execution"] or {}
-    if guard.get("api_errors"):
-        failure = ("The static Playwright API check blocked the script:\n"
-                   + "\n".join(guard["api_errors"]))
+    static_errors = (guard.get("api_errors") or []) + (guard.get("url_errors") or [])
+    if static_errors:
+        failure = (f"The static {_tool(rec)} checks blocked the script:\n"
+                   + "\n".join(static_errors))
     elif run and not run.get("passed"):
         failure = "Running the script failed with this output:\n" + _compact_traceback(run["output"])
+        if rec.get("kind") == "selenium":  # hint map reused from selenium-rag
+            name, hint = _sel_errors.hint_for(failure)
+            failure += f"\n\nHINT{' for ' + name if name else ''}: {hint}"
     else:
-        return {"error": "Nothing to fix: the script has not failed the API check or execution."}
+        return {"error": "Nothing to fix: the script has not failed a static check or execution."}
     # the test cases are left out: the script already encodes them, and the free tier
     # caps a single request at 8,000 tokens
     user = f"Requirement area: {rec['query']}\nStart URL: {rec['url']}\n\n"
@@ -392,10 +453,10 @@ def repair_script(script_id):
              "the parts that work. Where an assertion contradicts the APP UI DETAILS, follow the "
              "UI details. Return the full corrected script.")
     try:
-        code = _llm_code(_script_rules(rec["visible"]), user)
+        code = _llm_code(_rules_for(rec), user)
     except RuntimeError as e:
         return {"error": str(e)}
-    path = _save_script(rec["query"], code)
+    path = _save_for(rec, code)
     with _scripts_lock:
         rec.update({"code": code, "sha": _sha(code), "path": path, "guardrails": None,
                     "approval": None, "execution": None, "repairs": rec.get("repairs", 0) + 1})
@@ -403,23 +464,57 @@ def repair_script(script_id):
             "max_repairs": _MAX_REPAIRS, "fixed_failure": failure[:600]}
 
 
+def _requirement_match(rec):
+    """Guardrail 2 - LLM judge: how well does the script test the requirement? (score, reason)"""
+    if rec.get("kind") != "selenium":
+        # Stage 5's judge; it calls _ask, which retries per-minute rate limits
+        return guardrail_match(rec["requirement"], rec["code"])
+    system = ("Score 0-10 how well this Selenium script tests the requirement. "
+              "Respond EXACTLY:\nSCORE: <n>\nREASON: <one line>")
+    # temperature 0: the same script should get the same verdict, especially near the threshold
+    result = _ask(system, f"REQUIREMENT:\n{rec['requirement']}\n\nSCRIPT:\n{rec['code']}",
+                  temperature=0)
+    score, reason = 0, ""
+    for line in result.splitlines():
+        if line.upper().startswith("SCORE:"):
+            digits = "".join(c for c in line.split("/")[0] if c.isdigit())
+            score = int(digits) if digits else 0
+        if line.upper().startswith("REASON:"):
+            reason = line.split(":", 1)[1].strip()
+    return min(score, 10), reason
+
+
 def run_guardrails(script_id):
     rec = _scripts.get(script_id)
     if not rec:
         return {"error": "Unknown script. Generate the Playwright script again."}
-    safe, hits = guardrail_safety(rec["code"])
-    api_errors = check_playwright_api(rec["code"]) if safe else []
+    code, selenium = rec["code"], rec.get("kind") == "selenium"
+    safe, hits = guardrail_safety(code)
+    url_errors = []
+    if selenium:  # layers 1 and 2 reused from selenium-rag/guardrails.py
+        ok, violations = _sel_guardrails.layer1_static_analysis(code)
+        safe, hits = safe and ok, hits + violations
+        _, url_errors = _sel_guardrails.layer2_url_whitelist(code)
+    if not safe:
+        api_errors = []
+    else:
+        api_errors = check_selenium_api(code) if selenium else check_playwright_api(code)
     score, reason = (0, "Skipped - safety scan failed.")
     if api_errors:
-        score, reason = (0, "Skipped - script uses Playwright APIs that do not exist.")
-    if safe and not api_errors:
-        try:  # guardrail_match (Stage 5) now calls _ask, which retries per-minute limits
-            score, reason = guardrail_match(rec["requirement"], rec["code"])
+        score, reason = (0, f"Skipped - script uses {_tool(rec)} APIs that do not exist.")
+    elif url_errors:
+        score, reason = (0, "Skipped - script opens a URL outside the whitelist.")
+    if safe and not api_errors and not url_errors:
+        try:
+            score, reason = _requirement_match(rec)
         except LLMQuotaError as e:
             return {"error": str(e)}
-    result = {"safe": safe, "hits": hits, "api_errors": api_errors,
+    result = {"kind": rec.get("kind", "playwright"), "safe": safe, "hits": hits,
+              "api_errors": api_errors, "url_errors": url_errors,
+              "allowed_domains": list(_sel_guardrails.ALLOWED_DOMAINS) if selenium else [],
               "match_score": score, "match_reason": reason, "threshold": _MATCH_THRESHOLD,
-              "passed": safe and not api_errors and score >= _MATCH_THRESHOLD}
+              "passed": (safe and not api_errors and not url_errors
+                         and score >= _MATCH_THRESHOLD)}
     with _scripts_lock:
         rec["guardrails"] = result
         rec["approval"] = None  # any earlier approval no longer applies
@@ -602,8 +697,7 @@ def score_test_cases(script_id):
             else f"**Test Case {c['case_number']} (refined)**\n\n{c['final_case']}"
             for c in cases)
         try:
-            code, path = _build_script(rec["query"], refined_text, rec["url"], rec["visible"],
-                                       rec["ui_details"])
+            code, path = _rebuild_for(rec, refined_text)
         except RuntimeError as e:
             # the existing script no longer matches the refined cases - block approval
             with _scripts_lock:
@@ -624,3 +718,115 @@ def score_test_cases(script_id):
         with _scripts_lock:
             rec["case_scores"] = result
     return result
+
+
+# =====================================================================
+# Selenium script generation (POST /generate)
+# intent -> RAG + LangGraph test cases -> Python Selenium 4 script.
+# Display only: the script is statically checked but never executed here.
+# =====================================================================
+def _selenium_rules(has_ui_details, visible=False):
+    launch = ("- Start Chrome with a visible window: options = webdriver.ChromeOptions(); "
+              "options.add_argument('--start-maximized'); "
+              "driver = webdriver.Chrome(options=options)\n" if visible else
+              "- Start Chrome headless: options = webdriver.ChromeOptions(); "
+              "options.add_argument('--headless=new'); "
+              "driver = webdriver.Chrome(options=options)\n")
+    selectors = (
+        "- Use ONLY the selectors, URLs, test users and data listed in the APP UI DETAILS - never "
+        "invent selectors - and use the exact message wording they give\n"
+        if has_ui_details else
+        "- No UI details were supplied: put every locator in a clearly named constant at the top "
+        "of the script with a '# TODO: replace with the real selector' comment\n"
+    )
+    return (
+        "You are a test automation engineer. Convert the given test cases into ONE "
+        "self-contained Python Selenium 4 script. Requirements:\n"
+        "- Imports: from selenium import webdriver; from selenium.webdriver.common.by import By; "
+        "from selenium.webdriver.support.ui import WebDriverWait, Select; "
+        "from selenium.webdriver.support import expected_conditions as EC\n"
+        + launch +
+        "- Use the start URL provided; if none is given, define BASE_URL = 'http://localhost:8000' "
+        "at the top with a TODO comment\n"
+        + selectors +
+        "- Implement each test case as its own function taking the driver\n"
+        "- Wait with WebDriverWait(driver, 10).until(EC...) before reading or clicking elements; "
+        "never use time.sleep\n"
+        "- Use ONLY real expected_conditions: presence_of_element_located, "
+        "visibility_of_element_located, element_to_be_clickable, text_to_be_present_in_element, "
+        "url_contains, url_to_be, staleness_of, invisibility_of_element_located, any_of, all_of. "
+        "There is NO EC.or_ / EC.and_ - combine conditions with EC.any_of(...) / EC.all_of(...)\n"
+        "- A click that submits a form or follows a link RELOADS the page: elements located before "
+        "it become stale, and an element with the same id may already exist on the old page. "
+        "After such a click, wait for the NEW state - e.g. WebDriverWait(driver, 10).until("
+        "EC.text_to_be_present_in_element((By.CSS_SELECTOR, '#success-message'), 'cancelled')) or "
+        "EC.staleness_of(old_element) - and only then locate the element again and read it\n"
+        "- Use Select(...) for <select> dropdowns and plain assert statements with helpful messages\n"
+        "- Each test function must navigate to the page it needs itself; use unique new IDs so "
+        "tests do not collide\n"
+        "- Only assert a total count when the UI details state that exact count for that scenario\n"
+        "- Keep every string literal, including f-strings, on a single line\n"
+        "- Always call driver.quit() in a finally block; print 'TEST PASSED' at the very end only "
+        "if all assertions hold\n"
+        "- NO destructive actions (no os, subprocess, shutil, file writes, shell, eval, exec)\n"
+        "- Return ONLY runnable code, no markdown fences, no explanation."
+    )
+
+
+def check_selenium_api(code):
+    """Static check for a Selenium script: it must parse, and every EC.<condition> and
+    By.<STRATEGY> it uses must exist in the installed Selenium (catches invented names
+    such as EC.or_). Returns a list of problems; empty means OK."""
+    import ast
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        return [f"Python syntax error on line {e.lineno}: {e.msg}"]
+    known = {"EC": expected_conditions, "By": By}
+    unknown = set()
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+                and node.value.id in known and not hasattr(known[node.value.id], node.attr)):
+            unknown.add(f"{node.value.id}.{node.attr}")
+    return [f"{name} does not exist in Selenium" for name in sorted(unknown)]
+
+
+def _build_selenium_script(query, test_cases, url, visible, ui_details=""):
+    """LLM-generate the Selenium script for the test cases and save it. Returns (code, path)."""
+    user = f"Requirement area: {query}\n"
+    if url:
+        user += f"Start URL: {url}\n"
+    user += f"\nTEST CASES:\n{test_cases}\n\n"
+    if ui_details:
+        user += f"APP UI DETAILS (pages, selectors, test data):\n{ui_details}\n\n"
+    user += "Generate the full runnable Selenium script."
+    code = _llm_code(_selenium_rules(bool(ui_details), visible), user)
+    return code, _save_script(f"selenium {query}", code)
+
+
+def generate_selenium_script(intent, url="", ui_details="", visible=False):
+    """Run the RAG + LangGraph pipeline for the intent, then turn the resulting test cases
+    into a Selenium script. The script is registered like a Playwright one, so it goes
+    through the same guardrails -> Stage 6 human approval -> execution -> AI repair flow."""
+    cases = generate_test_cases(intent)
+    if "error" in cases:
+        return cases
+    try:
+        code, path = _build_selenium_script(intent, cases["test_cases"], url, visible, ui_details)
+    except RuntimeError as e:  # includes LLMQuotaError
+        return {"error": str(e)}
+    script_id = uuid.uuid4().hex
+    with _scripts_lock:
+        _scripts[script_id] = {"kind": "selenium", "query": intent,
+                               "test_cases": cases["test_cases"], "url": url,
+                               "visible": visible, "ui_details": ui_details,
+                               "requirement": _requirement(intent, url, cases["test_cases"]),
+                               "code": code, "sha": _sha(code), "path": path,
+                               "guardrails": None, "approval": None, "execution": None,
+                               "case_scores": None}
+    return {"script_id": script_id, "intent": intent, "code": code, "path": path,
+            "test_cases": cases["test_cases"], "context": cases["context"],
+            "score": cases["score"], "attempts": cases["attempts"],
+            "feedback": cases["feedback"], "used_ui_details": bool(ui_details)}

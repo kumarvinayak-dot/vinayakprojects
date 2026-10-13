@@ -112,6 +112,32 @@ python main.py --intent "login and verify secure area" --demo
 
 ---
 
+## Web App Integration (`web_app.py` → `/ai-testgen`)
+
+The **Generate Selenium Script** button on the AI test-gen page reuses parts of this folder.
+A Selenium script follows the same flow as a Playwright one:
+generate → guardrails → Stage 6 human approval → execute → **Fix script with AI** → guardrails and approval again.
+
+| From this folder | How the web app uses it |
+|---|---|
+| `guardrails.py` — `layer1_static_analysis`, `layer2_url_whitelist` | Run as part of **Generate Guardrail** for Selenium scripts (the URL whitelist is shown as Guardrail 1c) |
+| `selenium_errors.py` — `SELENIUM_ERROR_MAP`, `hint_for` | The exception → hint is added to the AI repair prompt |
+
+Both modules are standard-library only, so the web app loads them without this folder's other dependencies.
+
+Not used by the web app, by design:
+
+- `SeleniumExecutor` / `run_test_code` run generated code with `exec()` inside the calling process and re-run each
+  AI repair automatically. The web app runs the saved script in a separate process, only after a human approves
+  that exact version, and every repair needs approval again.
+- `langgraph_pipeline.py` / `rag_engine.py` generate from Selenium code patterns for `the-internet.herokuapp.com`.
+  The web app generates from the CRM requirements (`crm_requirements.txt`) and the target app's UI map.
+- `layer3_human_approval` is a terminal prompt; the web page's approval panel replaces it.
+
+To allow another target host, add it to `ALLOWED_DOMAINS` in `guardrails.py`.
+
+---
+
 ## Interview Talking Points
 
 > "I built a RAG pipeline where natural language test intents are embedded using sentence-transformers and stored in FAISS. On query, the top-3 similar patterns are retrieved and fed into a LangGraph StateGraph with three nodes — generate, validate, and refine. DeepEval checks Faithfulness and Answer Relevancy against a 0.7 threshold. Before execution, three guardrail layers run: static code analysis for dangerous patterns, URL whitelist enforcement, and a mandatory human approval gate. Selenium WebDriver then executes the test, and on failure, an AI Repair Loop maps the exception type to a specific hint and asks the LLM to fix the code — up to three attempts."

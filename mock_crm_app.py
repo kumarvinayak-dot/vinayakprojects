@@ -400,7 +400,8 @@ ORDER DETAIL  {base}/orders/<ORDER_ID>
   #edit-order-link (only when status New or Pending)
   #cancel-order-button
   #approval-status "Cancellation pending supervisor approval." ; #approve-cancel-button (supervisor only)
-  Audit log: table #audit-log, rows .audit-entry (oldest first), cells .audit-user and .audit-action
+  Audit log: <table id="audit-log">, rows <tr class="audit-entry"> (oldest first),
+    cells <td class="audit-user"> and <td class="audit-action"> (these are tr/td, not div)
     .audit-user shows the USER ID that acted ("csr1" or "sup1"), never the display name
     .audit-action is exactly one of:
       "Order created" | "Order modified" | "Order cancelled"
