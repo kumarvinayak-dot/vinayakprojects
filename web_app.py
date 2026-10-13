@@ -1490,6 +1490,36 @@ def ai_testgen_run():
     result = ai_testgen.generate_test_cases(query)
     return jsonify(result)
 
+_ES_CONTINUOUS, _ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
+
+
+def _set_awake(required):
+    """Windows: ask the system not to idle-sleep while this request thread works.
+    Pipeline steps run for minutes with no keyboard/mouse input, and a laptop entering
+    standby mid-run drops the Groq connection and the browser's request. This is a
+    per-thread request that ends with the HTTP request; no power setting is changed."""
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(
+            _ES_CONTINUOUS | (_ES_SYSTEM_REQUIRED if required else 0))
+    except Exception:
+        pass  # not Windows, or the call is unavailable
+
+
+@app.before_request
+def _ai_testgen_stay_awake():
+    from flask import request
+    if request.method == "POST" and request.path.startswith(("/ai-testgen/", "/generate")):
+        _set_awake(True)
+
+
+@app.teardown_request
+def _ai_testgen_allow_sleep(_exc=None):
+    from flask import request
+    if request.method == "POST" and request.path.startswith(("/ai-testgen/", "/generate")):
+        _set_awake(False)
+
+
 @app.route("/generate", methods=["POST"])
 def ai_testgen_generate_selenium():
     """intent -> RAG + LangGraph test cases -> Selenium script. The script is registered

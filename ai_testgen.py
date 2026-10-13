@@ -63,19 +63,76 @@ def _quota_message(err):
     return None
 
 
+class _DailyLimitError(LLMQuotaError):
+    """This model's daily quota is used up (other models have their own quota)."""
+
+
+# Backup models, tried in order when a model's DAILY Groq quota is used up. Each model has its
+# own daily budget on the free tier. Override with GROQ_FALLBACK_MODELS="model-a,model-b".
+_FALLBACK_MODELS = [m.strip() for m in os.environ.get(
+    "GROQ_FALLBACK_MODELS", "openai/gpt-oss-20b,qwen/qwen3.8-27b").split(",") if m.strip()]
+_exhausted_until = {}   # model -> time.time() until which it is skipped
+_models_used = []       # models that answered recent calls (see models_used_since)
+
+
+def models_used_since(mark):
+    """Distinct models that answered calls made after position `mark` (len(_models_used))."""
+    return list(dict.fromkeys(_models_used[mark:]))
+
+
+def _options_for(model, options):
+    """Drop request options a model family does not accept."""
+    if "gpt-oss" in model:
+        return options
+    return {k: v for k, v in options.items() if k != "reasoning_effort"}
+
+
 def _chat(messages, retries=6, model=_MODEL, **options):
-    """Chat completion that handles Groq rate limits (HTTP 429).
-    A daily limit fails fast with a clear message; a per-minute limit waits for
-    Groq's retry-after (capped at 30 s) and retries."""
+    """Chat completion with automatic model fallback.
+
+    Tries `model`; if Groq says that model's daily quota is used up, moves on to the
+    backup models. A model that hit its daily limit is skipped for the next 10 minutes."""
+    import re as _re
     import time
-    from openai import APIStatusError, RateLimitError
+    chain = [model] + [m for m in _FALLBACK_MODELS if m != model]
+    usable = [m for m in chain if time.time() >= _exhausted_until.get(m, 0)] or chain
+    last_error = None
+    for candidate in usable:
+        try:
+            response = _chat_one(messages, retries, candidate, **_options_for(candidate, options))
+        except _DailyLimitError as e:
+            _exhausted_until[candidate] = time.time() + 600
+            last_error = e
+            print(f"[ai_testgen] daily quota used up for {candidate}; trying the next model",
+                  flush=True)
+            continue
+        message = response.choices[0].message
+        if message.content and "<think>" in message.content:  # some models inline their reasoning
+            message.content = _re.sub(r"(?s)<think>.*?</think>", "", message.content).strip()
+        _models_used.append(candidate)
+        return response
+    raise LLMQuotaError(f"{last_error} All backup models ({', '.join(chain[1:]) or 'none'}) "
+                        "are also out of daily quota.")
+
+
+def _chat_one(messages, retries, model, **options):
+    """One model: handles Groq rate limits (HTTP 429). A daily limit raises
+    _DailyLimitError at once; a per-minute limit waits for Groq's retry-after
+    (capped at 30 s) and retries."""
+    import time
+    from openai import APIConnectionError, APIStatusError, RateLimitError
     for attempt in range(retries):
         try:
             return _client.chat.completions.create(model=model, messages=messages, **options)
+        except APIConnectionError as e:  # network dropped (Wi-Fi blip, PC went to sleep)
+            if attempt >= 2:
+                raise LLMQuotaError("Could not reach the Groq API - the network connection "
+                                    "dropped. Check the connection and try again.") from e
+            time.sleep(3)
         except RateLimitError as e:  # 429 - must come before APIStatusError (its parent)
             daily = _quota_message(e)
             if daily:
-                raise LLMQuotaError(daily) from e
+                raise _DailyLimitError(daily) from e
             if attempt == retries - 1:
                 raise LLMQuotaError("Groq per-minute rate limit (8,000 tokens/minute) is still "
                                     "exceeded after retries. Wait a minute and try again.") from e
@@ -111,7 +168,14 @@ def _generate(state):
     state["context"] = _retrieve(state["query"])
     system = ("You are a QA test-case generator. Using ONLY the provided context, "
               "generate 3 test cases with Title, Steps, Expected Result, including an "
-              "edge case. Format clearly with headings.")
+              "edge case. Format clearly with headings, each starting 'Test Case <n>'.\n"
+              "Each test case covers exactly ONE scenario: one sequence of steps with one "
+              "expected outcome. Never put 'Scenario A / Scenario B' or several alternative "
+              "inputs into the same test case.\n"
+              "SCOPE: every test case must test the requested area and nothing else. The "
+              "context may contain sections about other features - ignore those sections "
+              "completely. Never write a test case for a different feature, and never add "
+              "placeholder or 'insufficient context' test cases.")
     user = f"CONTEXT:\n{chr(10).join(state['context'])}\n\nGenerate test cases for: {state['query']}"
     if state.get("feedback"):
         user += f"\n\nImprove based on this feedback: {state['feedback']}"
@@ -149,6 +213,61 @@ def _build_graph():
 
 _app_graph = None
 
+_SCOPE_STOPWORDS = {
+    "test", "tests", "testing", "tested", "case", "cases", "functionality", "function",
+    "feature", "features", "flow", "flows", "scenario", "scenarios", "verify", "check",
+    "validate", "that", "this", "with", "from", "into", "page", "pages", "site", "website",
+    "application", "user", "users", "should", "work", "works", "working", "using", "the",
+    "and", "for", "http", "https", "www", "com",
+}
+# other spellings of a keyword that must count as the same thing
+_SCOPE_ALIASES = {
+    "login": ("log in", "logs in", "logged in", "logging in", "sign in", "signed in",
+              "authenticat", "credential", "password", "username", "secure area"),
+    "logout": ("log out", "logs out", "logged out", "sign out"),
+}
+
+
+def _scope_keywords(query):
+    """Primary intent keywords: the query's meaningful words, without URLs or filler."""
+    import re as _re
+    text = _re.sub(r"https?://\S+", " ", query.lower())
+    words = [w for w in _re.findall(r"[a-z]{3,}", text) if w not in _SCOPE_STOPWORDS]
+    return list(dict.fromkeys(words))
+
+
+def _scope_filter(query, test_cases):
+    """Deterministic scope filter: drop generated test cases that never mention any of the
+    intent's keywords (e.g. a meter-reading case for a 'login' intent).
+    Returns (kept_text, dropped_titles). Fails open: if nothing could be matched, or every
+    case would be dropped, the text is returned unchanged."""
+    keywords = _scope_keywords(query)
+    cases = split_test_cases(test_cases)
+    if not keywords or len(cases) < 2:
+        return test_cases, []
+
+    terms = []
+    for word in keywords:
+        terms.append(word[:6] if len(word) > 6 else word)  # cancellation -> cancel
+        terms.extend(_SCOPE_ALIASES.get(word, ()))
+
+    def in_scope(case_text):
+        # The title decides. A passing mention in the body is not enough (an order test
+        # may start with "Log in as a CSR"), so the body needs at least 3 mentions.
+        low = case_text.lower()
+        lines = [ln for ln in low.splitlines() if ln.strip()]
+        title = " ".join(lines[:1] + [ln for ln in lines[1:4] if "title" in ln])
+        if any(term in title for term in terms):
+            return True
+        return sum(low.count(term) for term in terms) >= 3
+
+    kept = [c for c in cases if in_scope(c)]
+    if not kept or len(kept) == len(cases):
+        return test_cases, []
+    dropped = [_case_title(c) for c in cases if not in_scope(c)]
+    return "\n\n---\n\n".join(kept), dropped
+
+
 def generate_test_cases(query: str) -> dict:
     """Main entry point called by the Flask route.
     Returns a dict with context, test_cases, score, feedback, attempts."""
@@ -163,10 +282,12 @@ def generate_test_cases(query: str) -> dict:
         final = _app_graph.invoke(initial)
     except LLMQuotaError as e:
         return {"error": str(e)}
+    kept, dropped = _scope_filter(query, final["test_cases"])
     return {
         "query": query,
         "context": "\n\n".join(final["context"]),
-        "test_cases": final["test_cases"],
+        "test_cases": kept,
+        "out_of_scope_dropped": dropped,
         "score": final["score"],
         "feedback": final["feedback"],
         "attempts": final["attempts"],
@@ -234,6 +355,8 @@ def _script_rules(visible):
         f"- Launch the browser EXACTLY like this: {launch_line}\n"
         "- Use the EXACT start URL provided\n"
         "- Implement each test case as its own function, assert with expect()\n"
+        "- SCOPE: write exactly one test function per given test case and nothing else - no tests "
+        "for other features, no placeholder, skipped or 'not implemented' test functions\n"
         "- If APP UI DETAILS are provided, use ONLY the selectors, URLs, test users and data "
         "listed there - never invent selectors - and automate every test-case step they make possible\n"
         "- Assert each value only on the element the UI details document for that value, using the "
@@ -341,12 +464,25 @@ def fetch_ui_map(url):
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.netloc:
         return {"error": "Enter a valid target URL first."}
+    # 1. a UI map bundled with this project for a known host (ui_maps/<host>.txt)
+    host = (parts.hostname or "").lower()
+    bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui_maps", f"{host}.txt")
+    if re.fullmatch(r"[a-z0-9.-]+", host) and os.path.isfile(bundled):
+        with open(bundled, "r", encoding="utf-8") as f:
+            return {"ui_details": f.read(20000), "source": f"bundled map ui_maps/{host}.txt"}
+    # 2. the app's own /ui-map page (the mock CRM serves one)
     map_url = f"{parts.scheme}://{parts.netloc}/ui-map"
     try:
         with urlopen(map_url, timeout=5) as r:
             return {"ui_details": r.read(20000).decode("utf-8", "replace"), "source": map_url}
     except Exception as e:
         return {"error": f"Could not load {map_url}: {e}. Paste your app's UI details instead."}
+
+
+def url_in_text(text):
+    """First http(s) URL mentioned in free text (e.g. inside the intent), or ''."""
+    m = re.search(r"https?://[^\s\"'<>)]+", text or "")
+    return m.group(0).rstrip(".,;") if m else ""
 
 
 def check_playwright_api(code):
@@ -584,6 +720,59 @@ def _case_title(case_text):
     return re.sub(r"(?i)^title\s*:\s*\**\s*", "", first)
 
 
+class JudgeJSONError(RuntimeError):
+    """The evaluation model did not return valid JSON, even after retries."""
+
+
+_JUDGE_JSON_RETRIES = 2  # retries after the first attempt
+
+
+def _repair_json(text):
+    """Return the JSON object inside the model's answer as valid JSON text, or None.
+    Handles markdown fences / prose around the object and trailing commas."""
+    import json
+    start, end = (text or "").find("{"), (text or "").rfind("}")
+    if start == -1 or end <= start:
+        return None
+    candidate = text[start:end + 1]
+    for attempt in (candidate, re.sub(r",\s*([\]}])", r"\1", candidate)):
+        try:
+            json.loads(attempt)
+            return attempt
+        except ValueError:
+            continue
+    return None
+
+
+def _judge_json(prompt):
+    """One DeepEval judge call that must come back as valid JSON.
+
+    DeepEval's metric prompts all ask for a JSON object. Three things made the judge
+    model return something unparsable: free-form output (now Groq JSON mode), hidden
+    reasoning using up the default 3,072-token output cap (now low reasoning effort and
+    a larger cap), and the occasional malformed object (now repaired, else retried).
+    Tries 1 + _JUDGE_JSON_RETRIES times, then raises JudgeJSONError so the caller can
+    skip that test case instead of crashing."""
+    from openai import BadRequestError
+    wants_json = "json" in prompt.lower()
+    messages = [{"role": "user", "content": prompt}]
+    for attempt in range(1 + _JUDGE_JSON_RETRIES):
+        options = {"reasoning_effort": "low", "max_completion_tokens": 4000}
+        if wants_json and attempt < 2:  # last attempt: plain mode, in case JSON mode is the problem
+            options["response_format"] = {"type": "json_object"}
+        try:
+            text = _chat(messages, model=_JUDGE_MODEL, **options).choices[0].message.content or ""
+        except BadRequestError:  # Groq 'json_validate_failed': the model produced invalid JSON
+            continue
+        if not wants_json:
+            return text
+        fixed = _repair_json(text)
+        if fixed is not None:
+            return fixed
+    raise JudgeJSONError("The evaluation model returned invalid JSON "
+                         f"{1 + _JUDGE_JSON_RETRIES} times in a row.")
+
+
 def _groq_judge():
     from deepeval.models.base_model import DeepEvalBaseLLM
 
@@ -595,8 +784,7 @@ def _groq_judge():
             return _client
 
         def generate(self, prompt: str) -> str:
-            r = _chat([{"role": "user", "content": prompt}], model=_JUDGE_MODEL)
-            return r.choices[0].message.content
+            return _judge_json(prompt)
 
         async def a_generate(self, prompt: str) -> str:
             return self.generate(prompt)
@@ -665,16 +853,24 @@ def score_test_cases(script_id):
             continue
         if i > 1:
             time.sleep(3)  # pace the judge calls to stay under the per-minute rate limit
+        scored = None  # (case text, entry) of the last attempt that was scored successfully
         for attempt in range(1, _CASE_MAX_ATTEMPTS + 1):
             try:
                 if attempt > 1:
                     current = _regenerate_case(rec["query"], context, current, last_reason)
                 entry = _score_case(rec["query"], context, current, judge)
             except Exception as e:
-                entry = {"error": str(e)[:300], "passed": False}
+                bad_json = isinstance(e, JudgeJSONError) or "invalid JSON" in str(e)
+                message = ("Skipped - the evaluation model returned invalid JSON after "
+                           f"{1 + _JUDGE_JSON_RETRIES} attempts." if bad_json else str(e)[:300])
+                if scored:  # the refined version could not be scored: keep the scored one
+                    current, entry = scored[0], dict(scored[1], warning=message)
+                else:       # skip this case with a warning; the other cases still get scored
+                    entry = {"error": message, "skipped": bad_json, "passed": False}
                 if "daily limit" in str(e):
                     quota_error = str(e)
                 break
+            scored = (current, entry)
             history.append({"attempt": attempt, "faithfulness": entry["faithfulness"],
                             "relevancy": entry["relevancy"], "passed": entry["passed"]})
             if entry["passed"]:
@@ -689,7 +885,8 @@ def score_test_cases(script_id):
     result = {"threshold": _CASE_THRESHOLD, "max_attempts": _CASE_MAX_ATTEMPTS,
               "cases": cases, "passed_count": sum(1 for c in cases if c["passed"]),
               "refined_count": sum(1 for c in cases if c["refined"]),
-              "error_count": sum(1 for c in cases if c.get("error"))}
+              "error_count": sum(1 for c in cases if c.get("error")),
+              "skipped_count": sum(1 for c in cases if c.get("skipped"))}
 
     if result["refined_count"]:
         refined_text = "\n\n---\n\n".join(
@@ -726,12 +923,16 @@ def score_test_cases(script_id):
 # Display only: the script is statically checked but never executed here.
 # =====================================================================
 def _selenium_rules(has_ui_details, visible=False):
-    launch = ("- Start Chrome with a visible window: options = webdriver.ChromeOptions(); "
-              "options.add_argument('--start-maximized'); "
-              "driver = webdriver.Chrome(options=options)\n" if visible else
-              "- Start Chrome headless: options = webdriver.ChromeOptions(); "
-              "options.add_argument('--headless=new'); "
-              "driver = webdriver.Chrome(options=options)\n")
+    # --disable-http2: on some networks HTTP/2 streams stall for 30 s per page in Chrome
+    mode = ("with a visible window", "--start-maximized") if visible else ("headless", "--headless=new")
+    launch = (f"- Define make_driver() that starts Chrome {mode[0]} EXACTLY like this and returns "
+              "the driver: options = webdriver.ChromeOptions(); "
+              f"options.add_argument('{mode[1]}'); options.add_argument('--disable-http2'); "
+              "driver = webdriver.Chrome(options=options); driver.set_page_load_timeout(90)\n"
+              "- ISOLATION: run every test function in its OWN fresh browser - for each test: "
+              "driver = make_driver(), then try: test_x(driver) finally: driver.quit(). Tests "
+              "must never share a browser session, so one test's login, logout or data cannot "
+              "affect the next\n")
     selectors = (
         "- Use ONLY the selectors, URLs, test users and data listed in the APP UI DETAILS - never "
         "invent selectors - and use the exact message wording they give\n"
@@ -750,6 +951,24 @@ def _selenium_rules(has_ui_details, visible=False):
         "at the top with a TODO comment\n"
         + selectors +
         "- Implement each test case as its own function taking the driver\n"
+        "- SCOPE: write exactly one test function per given test case and nothing else - no tests "
+        "for other features, no placeholder, skipped or 'not implemented' test functions\n"
+        "- Each test function performs ONE scenario (one submit, one expected outcome) with the "
+        "exact input data that scenario needs; double-check the typed values against the "
+        "scenario (e.g. a 'valid username, wrong password' test must type the VALID username)\n"
+        "- Text that may carry extra characters (e.g. a flash message with a close icon): check "
+        "that it CONTAINS the expected message instead of comparing for equality\n"
+        "- Define this helper (also: from selenium.common.exceptions import TimeoutException) and "
+        "use it for EVERY check that an element shows a message, so a failure reports what the "
+        "page really showed:\n"
+        "def wait_text(driver, by, selector, expected, timeout=20):\n"
+        "    try:\n"
+        "        WebDriverWait(driver, timeout).until("
+        "EC.text_to_be_present_in_element((by, selector), expected))\n"
+        "    except TimeoutException:\n"
+        "        found = [e.text for e in driver.find_elements(by, selector)]\n"
+        "        raise AssertionError(f'Expected {expected!r} in {selector!r} but found {found} "
+        "at {driver.current_url}')\n"
         "- Wait with WebDriverWait(driver, 10).until(EC...) before reading or clicking elements; "
         "never use time.sleep\n"
         "- Use ONLY real expected_conditions: presence_of_element_located, "
@@ -766,8 +985,10 @@ def _selenium_rules(has_ui_details, visible=False):
         "tests do not collide\n"
         "- Only assert a total count when the UI details state that exact count for that scenario\n"
         "- Keep every string literal, including f-strings, on a single line\n"
-        "- Always call driver.quit() in a finally block; print 'TEST PASSED' at the very end only "
-        "if all assertions hold\n"
+        "- Every driver must be closed with driver.quit() in a finally block; print 'TEST PASSED' "
+        "at the very end only if all tests ran and all assertions held\n"
+        "- Never locate an element before the action that creates it (e.g. a result message "
+        "that only exists after submitting); wait for it after the action\n"
         "- NO destructive actions (no os, subprocess, shutil, file writes, shell, eval, exec)\n"
         "- Return ONLY runnable code, no markdown fences, no explanation."
     )
@@ -810,6 +1031,12 @@ def generate_selenium_script(intent, url="", ui_details="", visible=False):
     """Run the RAG + LangGraph pipeline for the intent, then turn the resulting test cases
     into a Selenium script. The script is registered like a Playwright one, so it goes
     through the same guardrails -> Stage 6 human approval -> execution -> AI repair flow."""
+    mark = len(_models_used)
+    url = url or url_in_text(intent)          # "Test login on https://..." carries its own URL
+    ui_source = "provided" if ui_details else ""
+    if url and not ui_details:                # no UI details typed in: look for a UI map
+        found = fetch_ui_map(url)
+        ui_details, ui_source = found.get("ui_details", ""), found.get("source", "")
     cases = generate_test_cases(intent)
     if "error" in cases:
         return cases
@@ -829,4 +1056,7 @@ def generate_selenium_script(intent, url="", ui_details="", visible=False):
     return {"script_id": script_id, "intent": intent, "code": code, "path": path,
             "test_cases": cases["test_cases"], "context": cases["context"],
             "score": cases["score"], "attempts": cases["attempts"],
-            "feedback": cases["feedback"], "used_ui_details": bool(ui_details)}
+            "feedback": cases["feedback"], "used_ui_details": bool(ui_details),
+            "url": url, "ui_details": ui_details, "ui_source": ui_source,
+            "out_of_scope_dropped": cases.get("out_of_scope_dropped", []),
+            "models": models_used_since(mark), "primary_model": _MODEL}

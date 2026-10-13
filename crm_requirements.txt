@@ -20,3 +20,6 @@ Charges are only applied once an order reaches "Completed" status. The billing s
 
 7. DATA VALIDATION
 All meter readings and usage records ingested into the system must be validated: no negative values, no readings dated in the future, and no duplicate readings for the same meter and timestamp. Records failing validation are quarantined for manual review and must not flow to billing.
+
+8. USER LOGIN AND AUTHENTICATION
+The login page (demo application at https://the-internet.herokuapp.com/login) shall authenticate a user with a username and a password. With valid credentials (username "tomsmith", password "SuperSecretPassword!") the user is taken to the secure area page at /secure and the message "You logged into a secure area!" is shown. With an invalid or empty username the user stays on the login page and the error "Your username is invalid!" is shown. With a valid username and an invalid password the user stays on the login page and the error "Your password is invalid!" is shown. A logged-in user can log out with the Logout button, which returns them to the login page with the message "You logged out of the secure area!". The secure area must not be reachable without logging in: opening /secure directly redirects to the login page with the error "You must login to view the secure area!".

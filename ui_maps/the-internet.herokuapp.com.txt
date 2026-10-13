@@ -1,0 +1,58 @@
+THE-INTERNET LOGIN UI MAP (base URL https://the-internet.herokuapp.com)
+Verified against the live site on 13 Oct 2026. Use these exact selectors and messages.
+
+LOGIN  https://the-internet.herokuapp.com/login
+  Page heading: h2 with text "Login Page"
+  #username  text input
+  #password  password input
+  button[type="submit"]  the Login button (text "Login")
+  Valid user: tomsmith / SuperSecretPassword!
+
+  Every result message appears in  #flash  . Its text ends with a close character ("×") on a
+  second line, so NEVER compare the whole text for equality: check that it CONTAINS the message
+  (Selenium: EC.text_to_be_present_in_element((By.ID, "flash"), "<message>") or `"<message>" in text`).
+  #flash has class "flash success" for success and "flash error" for errors.
+
+  WHICH MESSAGE YOU GET (the username is checked first):
+    username is anything other than "tomsmith" (wrong, misspelt or empty), any password
+        -> "Your username is invalid!"
+    username is exactly "tomsmith" and the password is wrong or empty
+        -> "Your password is invalid!"
+    username "tomsmith" and password "SuperSecretPassword!"
+        -> "You logged into a secure area!"
+
+  Valid credentials   -> URL becomes https://the-internet.herokuapp.com/secure ;
+                         #flash contains "You logged into a secure area!" ;
+                         the page's h2 heading reads "Secure Area" (see HEADINGS below)
+  Wrong or empty username (any password) -> stays on /login ; #flash contains "Your username is invalid!"
+  Valid username + wrong password        -> stays on /login ; #flash contains "Your password is invalid!"
+
+HEADINGS
+  The h2 headings contain an icon and extra whitespace, so an exact XPath match such as
+  //h2[text()='Secure Area'] does NOT find them. Locate the heading with
+  (By.TAG_NAME, "h2") or (By.CSS_SELECTOR, "h2") and check  "Secure Area" in element.text
+  (or wait with EC.text_to_be_present_in_element((By.TAG_NAME, "h2"), "Secure Area")).
+  The same applies to #flash: locate by id, then check that the text CONTAINS the message.
+
+SECURE AREA  https://the-internet.herokuapp.com/secure   (only after a successful login)
+  h2 heading contains "Secure Area"
+  Logout: a.button[href="/logout"]  (text "Logout")
+  After logout -> URL back to https://the-internet.herokuapp.com/login ;
+                  #flash contains "You logged out of the secure area!"
+  Opening /secure without being logged in -> redirected to /login ;
+                  #flash contains "You must login to view the secure area!"
+
+IMPORTANT SITE BEHAVIOUR (verified 13 Oct 2026)
+  * A freshly opened /login page has NO #flash element. #flash exists only AFTER a login
+    attempt, a logout, or a redirect from /secure. Never look for #flash before clicking Login.
+  * Once Logout has been clicked, this site shows NO flash messages for later login attempts in
+    that same browser - not even after deleting cookies. Therefore every test must run in its
+    own fresh browser (new webdriver per test), and Logout may only be clicked as the LAST
+    step of a test. Do not log out in a test unless the test case is about logging out.
+  * In a fresh browser, repeated failed attempts each show their message normally.
+
+NOTES
+  There is no sign-up, password reset, account lockout, captcha or "remember me" on this site.
+  Each test should start with driver.get("https://the-internet.herokuapp.com/login").
+  A new browser session is always logged out.
+  The site can be slow: wait up to 20 seconds for #flash after clicking Login.

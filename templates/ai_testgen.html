@@ -339,12 +339,14 @@
           const at = cell((c.attempts || 0) + (c.refined ? ' (refined)' : ''), c.refined ? 'sc-num' : '');
           at.title = hist;
           tr.appendChild(at);
-          tr.appendChild(cell(c.error ? '⚠️ ERROR' : (c.passed ? '✅ PASS' : '❌ FAIL'), c.passed ? 'ok' : 'bad'));
+          tr.appendChild(cell(c.error ? (c.skipped ? '⚠️ SKIPPED' : '⚠️ ERROR') : (c.passed ? '✅ PASS' : '❌ FAIL'), c.passed ? 'ok' : 'bad'));
           body.appendChild(tr);
         });
         if (sc.error_count) {
           scoringProblem(sc.error_count + ' test case(s) could not be scored. ' +
-            (sc.cases.some(c => isDailyLimit(c.error)) ? 'The Groq free-tier DAILY token limit is used up — retry after the wait time shown, or upgrade the Groq plan.'
+            (sc.skipped_count === sc.error_count ? 'They were skipped because the evaluation model returned invalid JSON even after retries. ' +
+               'The other cases were scored normally — you can still review and approve, or click Retry scoring.'
+             : sc.cases.some(c => isDailyLimit(c.error)) ? 'The Groq free-tier DAILY token limit is used up — retry after the wait time shown, or upgrade the Groq plan.'
              : sc.cases.some(c => isRateLimit(c.error)) ? 'The Groq free tier hit its per-minute rate limit — wait about a minute, then click Retry scoring.'
                                                         : 'Click Retry scoring to try again.'));
         }
@@ -493,6 +495,17 @@
           $('btnPw').disabled = false; $('btnGr').disabled = false;
           $('seBadge').textContent = 'Python · Selenium 4'; $('seBadge').className = 'score-badge';
           const notes = [];
+          if (d.url && !$('url').value.trim()) $('url').value = d.url;   // URL taken from the intent
+          if (d.ui_source && d.ui_source !== 'provided') {               // UI map found automatically
+            $('uiDetails').value = d.ui_details;
+            $('uiMapStatus').textContent = '✅ Loaded from ' + d.ui_source;
+            notes.push('ℹ️ UI map loaded automatically from ' + d.ui_source + '.');
+          }
+          const backups = (d.models || []).filter(m => m !== d.primary_model);
+          if (backups.length) notes.push('⚠️ The main model (' + d.primary_model + ') is out of daily Groq quota, so backup model ' +
+            backups.join(', ') + ' was used. Results may be a little weaker than usual.');
+          if ((d.out_of_scope_dropped || []).length) notes.push('✂️ Scope filter removed ' + d.out_of_scope_dropped.length +
+            ' generated test case(s) unrelated to the intent: ' + d.out_of_scope_dropped.join('; '));
           if (!d.used_ui_details) notes.push('ℹ️ No App UI details were supplied, so the selectors are placeholders marked TODO. ' +
             'Fill in the Target URL and App UI details (or click "Load UI map from app") for real selectors.');
           $('seNote').textContent = notes.join('\n'); $('seNote').style.whiteSpace = 'pre-wrap';
