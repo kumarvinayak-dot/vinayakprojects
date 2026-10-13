@@ -1,0 +1,9 @@
+selenium==4.18.1
+webdriver-manager==4.0.1
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-groq==0.1.9
+faiss-cpu==1.8.0
+sentence-transformers==3.0.1
+deepeval==0.21.73
+python-dotenv==1.0.1
